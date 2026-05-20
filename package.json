@@ -19,8 +19,8 @@
   },
   "license": "ISC",
   "author": "valueerror",
-  "type": "commonjs",
-  "main": "gameserver.js",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

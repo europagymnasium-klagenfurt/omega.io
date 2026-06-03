@@ -24,7 +24,8 @@
             text-align: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .game-container {
+
+        #game-container {
             width: 1200px;
             height: 800px;
             background-color: rgb(59, 49, 49);
@@ -35,14 +36,26 @@
             align-items: center;
             justify-content: center;
         }
+        
+
     </style>
 </head>
 <body>
     <header>
-        <h1>Omega.io - Top Down Car Game</h1>
+        <h1>Omega.io</h1>
     </header>
-    <div class="game-container">
+   
+   
+    <div id="game-container">
         <!-- Game will be inserted here -->
     </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    
+    <script src="/assets/phaser.min.js"></script>
+    <script src="/assets/game.js"></script>
+
+
 </body>
 </html>

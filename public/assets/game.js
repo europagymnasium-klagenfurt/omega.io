@@ -18,10 +18,11 @@ class OmegaIo extends Phaser.Scene {
 
         this.car = this.physics.add.sprite(400, 300, 'car').setCollideWorldBounds(true).setScale(0.5);
         this.car.setAngle(90);
-        this.car.body.allowRotation = false;
         this.car.setCircle(50, 25, 55);
 
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        this.setupMultiplayer();
     }
 
     update(time, delta) {
@@ -30,9 +31,13 @@ class OmegaIo extends Phaser.Scene {
         const speed = 300;
 
         if (this.cursors.left.isDown) {
-            this.car.angle -= rotationSpeed * delta / 1000;
-        } else if (this.cursors.right.isDown) {
-            this.car.angle += rotationSpeed * delta / 1000;
+            this.car.setAngularVelocity(-150)   
+        }
+        else if (this.cursors.right.isDown) {
+            this.car.setAngularVelocity(150)
+        }
+        else {
+            this.car.setAngularVelocity(0)
         }
 
         const angle = this.car.rotation - Math.PI / 2;
@@ -45,7 +50,27 @@ class OmegaIo extends Phaser.Scene {
             this.car.body.velocity.scale(0.95);
         }
 
+        socket.emit("update", {x: this.car.x, y: this.car.y, angle: this.car.angle});
+
     }
+
+    setupMultiplayer() {
+        socket.emit("ready");
+
+        socket.on("init", (data) => {
+            this.playerId = data.id;
+            this.players = data.players;
+            
+            // hier übernehmen wir für unser car die position und den winkel und die farbe die wir vom server erhalten
+            const playerData = this.players[this.playerId];
+            this.car.setPosition(playerData.x, playerData.y);
+            this.car.setAngle(playerData.angle);
+            this.car.setTint(playerData.color);
+        });
+
+    }
+
+
 
 }
 

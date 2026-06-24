@@ -28,6 +28,7 @@ io.on("connection", (socket) => {
 
   socket.on("ready", () => {
     socket.emit("init", {id: id, players: players})
+    socket.broadcast.emit("playerJoined", players[id])
   });
 
   socket.on("update", (data) => {
@@ -43,6 +44,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("user disconnected");
+    socket.broadcast.emit("playerLeft", {id: id})
     delete players[id];
   });
 });

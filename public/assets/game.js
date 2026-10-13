@@ -7,6 +7,11 @@
 
 const socket = io(); 
 
+const viewportWidth = 1200;
+const viewportHeight = 800;
+const worldWidth = 2400;
+const worldHeight = 1600;
+
 class OmegaIo extends Phaser.Scene {
     preload() {
         this.load.image("racetrack", "assets/racetrack.jpg");
@@ -14,7 +19,8 @@ class OmegaIo extends Phaser.Scene {
     }
 
     create() {
-        this.add.tileSprite(0, 0, 1200, 800, "racetrack").setOrigin(0, 0);
+        this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+        this.add.tileSprite(0, 0, worldWidth, worldHeight, "racetrack").setOrigin(0, 0);
 
         this.car = this.physics.add.sprite(400, 300, 'car').setCollideWorldBounds(true).setScale(0.5);
         this.car.setAngle(90);
@@ -23,9 +29,16 @@ class OmegaIo extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.remoteCars = {}
 
+        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+        this.cameras.main.startFollow(this.car, true, 0.05, 0.05);
 
         this.setupMultiplayer();
     }
+
+
+
+
+
 
     update(time, delta) {
         // Bewegung des Autos mit den Pfeiltasten. links und rechts rotieren die Grafik, die Hitbox bleibt axis-aligned.
@@ -98,7 +111,14 @@ class OmegaIo extends Phaser.Scene {
 
         socket.on("playerJoined", (player) => {
             this.addRemoteCar(player)
+        })
 
+        socket.on("playerLeft", (data) => {
+            const car = this.remoteCars[data.id]
+            if (car){
+                car.destroy()
+                delete this.remoteCars[data.id]
+            }
         })
 
 

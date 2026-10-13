@@ -48,7 +48,12 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("user disconnected");
     delete players[id];
+    socket.broadcast.emit("playerLeft", {id: id})  
   });
+
+
+
+
 });
 
 

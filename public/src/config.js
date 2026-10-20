@@ -15,6 +15,26 @@ export const CAR = {
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };
 
+export const SPEED_BOOST = {
+    x: WORLD_WIDTH / 2,
+    y: WORLD_HEIGHT / 2,
+    size: 120,
+    pickupRadius: 125,
+    multiplier: 2,
+    duration: 3000,
+    respawnDelay: 30000,
+    retryDelay: 250,
+    smokeTextureSize: 64,
+    smokeCount: 16,
+    smokeLifespan: 2000,
+    smokeSpeed: { min: 35, max: 120 },
+    smokeScale: { start: 0.2, end: 1.1 },
+    smokeAlpha: { start: 0.7, end: 0 },
+    messageDuration: 2000,
+    messageFontSize: "56px",
+    messageY: VIEW_HEIGHT / 4,
+};
+
 export const COLLISION_MESSAGE = {
     fontSize: 112,
     popScale: 1.25,

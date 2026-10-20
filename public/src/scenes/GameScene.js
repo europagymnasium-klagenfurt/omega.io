@@ -8,6 +8,7 @@ import { FPSCounter } from "../objects/FPSCounter.js";
 import { CarCollisions } from "../systems/CarCollisions.js";
 import { CollisionMessage } from "../systems/CollisionMessage.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
+import { SpeedBoost } from "../systems/SpeedBoost.js";
 import { PlayerHud } from "../systems/PlayerHud.js";
 
 export class GameScene extends Phaser.Scene {
@@ -26,6 +27,7 @@ export class GameScene extends Phaser.Scene {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        this.speedBoost = new SpeedBoost(this, this.car);
         this.fpsCounter = new FPSCounter(this);
         this.collisionMessage = new CollisionMessage(this);
         this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);

@@ -14,3 +14,12 @@ export const CAR = {
     scale: 0.5,
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };
+
+export const PLAYER_HUD = {
+    width: 240,
+    margin: 16,
+    padding: 12,
+    titleHeight: 24,
+    rowHeight: 22,
+    fontSize: 14,
+};

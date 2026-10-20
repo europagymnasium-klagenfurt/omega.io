@@ -4,17 +4,18 @@ import { socket, EVENTS } from "../network.js";
 import { RemoteCar } from "../objects/RemoteCar.js";
 
 export class Multiplayer {
-    constructor(scene, localCar) {
+    constructor(scene, localCar, playerHud) {
         this.scene = scene;
         this.localCar = localCar;
+        this.playerHud = playerHud;
         this.playerId = null;
         this.remoteCars = {};
 
         // alle server-events: event-name -> funktion
         this.handlers = {
             [EVENTS.INIT]: (data) => this.onInit(data),
-            [EVENTS.PLAYER_JOINED]: (player) => this.addRemoteCar(player),
-            [EVENTS.PLAYER_LEFT]: (data) => this.removeRemoteCar(data.id),
+            [EVENTS.PLAYER_JOINED]: (player) => this.onPlayerJoined(player),
+            [EVENTS.PLAYER_LEFT]: (data) => this.onPlayerLeft(data.id),
             [EVENTS.PLAYER_MOVED]: (data) => this.remoteCars[data.id]?.applyState(data),
         };
 
@@ -32,10 +33,21 @@ export class Multiplayer {
 
         // für unser car die position, den winkel und die farbe vom server übernehmen
         this.localCar.applyServerData(data.players[this.playerId]);
+        this.playerHud.setPlayers(data.players);
 
         for (const player of Object.values(data.players)) {
             this.addRemoteCar(player);
         }
+    }
+
+    onPlayerJoined(player) {
+        this.addRemoteCar(player);
+        this.playerHud.addPlayer(player);
+    }
+
+    onPlayerLeft(id) {
+        this.removeRemoteCar(id);
+        this.playerHud.removePlayer(id);
     }
 
     addRemoteCar(player) {

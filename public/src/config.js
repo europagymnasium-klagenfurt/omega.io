@@ -15,6 +15,13 @@ export const CAR = {
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };
 
+export const HEALTH_BAR = {
+    points: 5,
+    heartSize: 20,
+    heartSpacing: 20,
+    offset: 18,
+};
+
 export const PLAYER_HUD = {
     width: 240,
     margin: 16,

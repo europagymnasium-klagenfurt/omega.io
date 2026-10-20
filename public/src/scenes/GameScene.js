@@ -4,6 +4,7 @@
 
 import { WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
+import { FPSCounter } from "../objects/FPSCounter.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
 
 export class GameScene extends Phaser.Scene {
@@ -22,11 +23,13 @@ export class GameScene extends Phaser.Scene {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        this.fpsCounter = new FPSCounter(this);
         this.multiplayer = new Multiplayer(this, this.car);
     }
 
     update(time, delta) {
         this.car.drive(this.cursors);
+        this.fpsCounter.update(delta);
         this.multiplayer.sendState();
     }
 }

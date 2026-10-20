@@ -4,6 +4,7 @@
 
 import { WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
+import { FPSCounter } from "../objects/FPSCounter.js";
 import { CarCollisions } from "../systems/CarCollisions.js";
 import { CollisionMessage } from "../systems/CollisionMessage.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
@@ -25,14 +26,16 @@ export class GameScene extends Phaser.Scene {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        this.fpsCounter = new FPSCounter(this);
         this.collisionMessage = new CollisionMessage(this);
         this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);
         this.playerHud = new PlayerHud(this);
-    this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud);
+        this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud);
     }
 
     update(time, delta) {
         this.car.drive(this.cursors);
+        this.fpsCounter.update(delta);
         this.multiplayer.sendState();
     }
 }

@@ -11,6 +11,8 @@ export class Multiplayer {
         this.playerHud = playerHud;
         this.playerId = null;
         this.remoteCars = {};
+        this.latestState = localCar.getState();
+        this.animationFrameId = null;
 
         // alle server-events: event-name -> funktion
         this.handlers = {
@@ -26,6 +28,7 @@ export class Multiplayer {
         // listener wieder entfernen, wenn die scene beendet wird. sonst gibt es sie nach einem neustart doppelt.
         scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
 
+        this.sendAtRefreshRate();
         socket.emit(EVENTS.READY);
     }
 
@@ -68,10 +71,20 @@ export class Multiplayer {
 
     // wird jeden frame von der scene aufgerufen
     sendState() {
-        socket.emit(EVENTS.UPDATE, this.localCar.getState());
+        this.latestState = this.localCar.getState();
+    }
+
+    sendAtRefreshRate() {
+        const send = () => {
+            socket.emit(EVENTS.UPDATE, this.latestState);
+            this.animationFrameId = requestAnimationFrame(send);
+        };
+
+        this.animationFrameId = requestAnimationFrame(send);
     }
 
     destroy() {
+        cancelAnimationFrame(this.animationFrameId);
         for (const [event, handler] of Object.entries(this.handlers)) {
             socket.off(event, handler);
         }

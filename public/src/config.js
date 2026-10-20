@@ -14,3 +14,10 @@ export const CAR = {
     scale: 0.5,
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };
+
+export const HEALTH_BAR = {
+    points: 5,
+    heartSize: 20,
+    heartSpacing: 20,
+    offset: 18,
+};

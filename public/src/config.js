@@ -21,3 +21,12 @@ export const HEALTH_BAR = {
     heartSpacing: 20,
     offset: 18,
 };
+
+export const PLAYER_HUD = {
+    width: 240,
+    margin: 16,
+    padding: 12,
+    titleHeight: 24,
+    rowHeight: 22,
+    fontSize: 14,
+};

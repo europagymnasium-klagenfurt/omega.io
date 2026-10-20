@@ -1,6 +1,6 @@
 // das eigene auto: physik und steuerung
 
-import { CAR } from "../config.js";
+import { CAR, SPEED_BOOST } from "../config.js";
 
 export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y) {
@@ -11,6 +11,7 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         this.setCollideWorldBounds(true).setScale(CAR.scale);
         this.setAngle(90);
         this.setCircle(CAR.hitbox.radius, CAR.hitbox.offsetX, CAR.hitbox.offsetY);
+        this.speedMultiplier = 1;
     }
 
     // wird jeden frame von der scene aufgerufen.
@@ -25,14 +26,22 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         }
 
         const angle = this.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
+        const speed = CAR.speed * this.speedMultiplier;
 
         if (cursors.up.isDown) {
-            this.scene.physics.velocityFromRotation(angle, CAR.speed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, speed, this.body.velocity);
         } else if (cursors.down.isDown) {
-            this.scene.physics.velocityFromRotation(angle, -CAR.speed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, -speed, this.body.velocity);
         } else {
             this.body.velocity.scale(CAR.friction);   // geschwindigkeit verringern
         }
+    }
+
+    activateSpeedBoost() {
+        this.speedMultiplier = SPEED_BOOST.multiplier;
+        this.scene.time.delayedCall(SPEED_BOOST.duration, () => {
+            this.speedMultiplier = 1;
+        });
     }
 
     // daten, die an den server geschickt werden

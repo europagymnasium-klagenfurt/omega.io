@@ -5,6 +5,7 @@
 import { WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
+import { SpeedBoost } from "../systems/SpeedBoost.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -23,6 +24,7 @@ export class GameScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.multiplayer = new Multiplayer(this, this.car);
+        this.speedBoost = new SpeedBoost(this, this.car);
     }
 
     update(time, delta) {

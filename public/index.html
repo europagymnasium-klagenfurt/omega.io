@@ -38,16 +38,15 @@
             font-size: 1.25rem;
         }
 
+        /* maximal 1200x800, wird kleiner wenn das fenster zu schmal oder zu niedrig ist (3:2 bleibt) */
         #game-container {
-            width: 1200px;
-            height: 800px;
+            width: min(1200px, 100vw - 2rem, (100vh - 7rem) * 1.5);
+            aspect-ratio: 3 / 2;
             background-color: rgb(59, 49, 49);
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(56, 52, 52, 0.2);
             margin: 2rem auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            overflow: hidden;
         }
         
 
@@ -66,8 +65,8 @@
     <script src="/socket.io/socket.io.js"></script>
 
     
-    <script src="/assets/phaser.min.js"></script>
-    <script src="/assets/game.js"></script>
+    <script src="/lib/phaser.min.js"></script>
+    <script type="module" src="/src/main.js"></script>
 
 
 </body>

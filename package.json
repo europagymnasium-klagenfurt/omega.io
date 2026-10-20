@@ -1,7 +1,17 @@
 {
   "name": "omega.io",
   "version": "1.0.0",
-  "description": "simple browser game",
+  "description": "Multiplayer top-down car game (Phaser + Socket.io)",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "node",
     "express",
@@ -19,11 +29,6 @@
   },
   "license": "ISC",
   "author": "valueerror",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"

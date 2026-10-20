@@ -15,23 +15,82 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
 
     // wird jeden frame von der scene aufgerufen.
     // links und rechts rotieren die grafik, die hitbox bleibt axis-aligned.
-    drive(cursors) {
+    drive(cursors, shiftKey) {
+        const turnSpeed = shiftKey && shiftKey.isDown
+            ? CAR.rotationSpeed * CAR.turnBoostMultiplier
+            : CAR.rotationSpeed;
+
+        const isTurning = cursors.left.isDown || cursors.right.isDown;
+        const isShiftBoost = shiftKey && shiftKey.isDown && isTurning;
+
         if (cursors.left.isDown) {
-            this.setAngularVelocity(-CAR.rotationSpeed);
+            this.setAngularVelocity(-turnSpeed);
         } else if (cursors.right.isDown) {
-            this.setAngularVelocity(CAR.rotationSpeed);
+            this.setAngularVelocity(turnSpeed);
         } else {
             this.setAngularVelocity(0);
         }
 
+        if (isShiftBoost) {
+            this.emitDust();
+        }
+
         const angle = this.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
+        const activeSpeed = shiftKey && shiftKey.isDown ? CAR.speed * CAR.shiftSpeedMultiplier : CAR.speed;
 
         if (cursors.up.isDown) {
-            this.scene.physics.velocityFromRotation(angle, CAR.speed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, activeSpeed, this.body.velocity);
         } else if (cursors.down.isDown) {
-            this.scene.physics.velocityFromRotation(angle, -CAR.speed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, -activeSpeed, this.body.velocity);
         } else {
-            this.body.velocity.scale(CAR.friction);   // geschwindigkeit verringern
+            const glideFactor = shiftKey && shiftKey.isDown ? CAR.glideShift : CAR.glide;
+            this.body.velocity.scale(glideFactor);   // geschwindigkeit verringern: normal kürzer, mit SHIFT deutlich länger
+        }
+    }
+
+    emitDust() {
+        const turnLeft = this.body.angularVelocity < 0;
+        const radius = CAR.hitbox.radius * 0.5;
+        const rotation = this.rotation;
+
+        const points = turnLeft
+            ? [
+                { x: 1, y: -1 },
+                { x: -1, y: 1 },
+            ]
+            : [
+                { x: -1, y: -1 },
+                { x: 1, y: 1 },
+            ];
+
+        for (const point of points) {
+            const localX = point.x * radius;
+            const localY = point.y * radius;
+            const worldX = this.x + localX * Math.cos(rotation) - localY * Math.sin(rotation);
+            const worldY = this.y + localX * Math.sin(rotation) + localY * Math.cos(rotation);
+
+            const particle = this.scene.add.sprite(
+                worldX,
+                worldY,
+                "starParticle"
+            );
+
+            const scale = 0.014 + Math.random() * 0.02;
+            particle.setScale(scale);
+            particle.setTint(0xfff200);
+            particle.setAlpha(0.5);
+            particle.setDepth(5);
+
+            this.scene.tweens.add({
+                targets: particle,
+                x: particle.x + (Math.random() - 0.5) * 6,
+                y: particle.y + 10 + Math.random() * 7,
+                alpha: 0,
+                scale: scale * 0.8,
+                duration: 230 + Math.random() * 110,
+                ease: "Linear",
+                onComplete: () => particle.destroy(),
+            });
         }
     }
 

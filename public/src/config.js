@@ -9,8 +9,11 @@ export const DEBUG = true;   // zeigt die hitboxen an
 
 export const CAR = {
     rotationSpeed: 150,   // grad pro sekunde
+    turnBoostMultiplier: 2, // wenn SHIFT gedrückt ist, wird die drehung vervielfacht
     speed: 600,           // pixel pro sekunde
-    friction: 0.97,       // geschwindigkeit wird pro frame damit multipliziert, wenn kein gas
+    shiftSpeedMultiplier: 0.7, // mit SHIFT: 30% langsamer
+    glide: 0.965,         // normale gleitdistanz leicht erhöht
+    glideShift: 0.97,     // mit SHIFT: gleitdistanz noch länger, aber nicht mehr so extrem
     scale: 0.5,
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };

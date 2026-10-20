@@ -9,6 +9,7 @@ export class PreloadScene extends Phaser.Scene {
     preload() {
         this.load.image("racetrack", "assets/racetrack.jpg");
         this.load.image("car", "assets/car1.png");
+        this.load.image("starParticle", "assets/starparticle.png");
     }
 
     create() {

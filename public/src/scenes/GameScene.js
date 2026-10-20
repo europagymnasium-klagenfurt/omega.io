@@ -21,12 +21,13 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.car, true);
 
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
         this.multiplayer = new Multiplayer(this, this.car);
     }
 
     update(time, delta) {
-        this.car.drive(this.cursors);
+        this.car.drive(this.cursors, this.shiftKey);
         this.multiplayer.sendState();
     }
 }

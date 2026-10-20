@@ -4,6 +4,7 @@
 
 import { WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
+import { GarageAccess } from "../systems/GarageAccess.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
 
 export class GameScene extends Phaser.Scene {
@@ -11,11 +12,12 @@ export class GameScene extends Phaser.Scene {
         super("GameScene");
     }
 
-    create() {
+    create(data) {
         this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, "racetrack").setOrigin(0, 0);
 
-        this.car = new PlayerCar(this, 400, 300);
+        this.car = new PlayerCar(this, 400, 300, data?.vehicleKey);
+        if (!data?.vehicleChangeUsed) this.garageAccess = new GarageAccess(this, this.car);
 
         this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         this.cameras.main.startFollow(this.car, true);

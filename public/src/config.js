@@ -12,5 +12,6 @@ export const CAR = {
     speed: 600,           // pixel pro sekunde
     friction: 0.97,       // geschwindigkeit wird pro frame damit multipliziert, wenn kein gas
     scale: 0.5,
-    hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
+    referenceSize: 235,   // längste seite des bisherigen autos
+    hitbox: { widthRatio: 0.78 },
 };

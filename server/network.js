@@ -1,16 +1,17 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, updatePlayer, removePlayer } from "./players.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer } from "./players.js";
 
 export function setupNetwork(io) {
     io.on("connection", (socket) => {
         console.log("a user connected " + socket.id);
 
         const id = socket.id;
-        addPlayer(id);
 
-        socket.on(EVENTS.READY, () => {
+        socket.on(EVENTS.READY, (data = {}) => {
+            if (!getPlayer(id)) addPlayer(id);
+            setPlayerVehicle(id, data.vehicleKey);
             socket.emit(EVENTS.INIT, { id: id, players: getAllPlayers() });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
         });
@@ -24,8 +25,10 @@ export function setupNetwork(io) {
 
         socket.on("disconnect", () => {
             console.log("user disconnected " + id);
-            socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
-            removePlayer(id);
+            if (getPlayer(id)) {
+                socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
+                removePlayer(id);
+            }
         });
     });
 }

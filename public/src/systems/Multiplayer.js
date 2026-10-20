@@ -24,7 +24,7 @@ export class Multiplayer {
         // listener wieder entfernen, wenn die scene beendet wird. sonst gibt es sie nach einem neustart doppelt.
         scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
 
-        socket.emit(EVENTS.READY);
+        socket.emit(EVENTS.READY, { vehicleKey: this.localCar.texture.key });
     }
 
     onInit(data) {
@@ -39,7 +39,11 @@ export class Multiplayer {
     }
 
     addRemoteCar(player) {
-        if (player.id === this.playerId || this.remoteCars[player.id]) return;   // eigene id, oder player id gibt es schon
+        if (player.id === this.playerId) return;
+        if (this.remoteCars[player.id]) {
+            this.remoteCars[player.id].setVehicle(player.vehicleKey);
+            return;
+        }
         this.remoteCars[player.id] = new RemoteCar(this.scene, player);
     }
 

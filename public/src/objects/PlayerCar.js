@@ -1,7 +1,8 @@
 // das eigene auto: physik und steuerung
 
-import { CAR } from "../config.js";
+import { CAR, SPEED_BOOST } from "../config.js";
 import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
+import { HealthBar } from "./HealthBar.js";
 
 export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, vehicleKey = DEFAULT_VEHICLE_KEY) {
@@ -16,6 +17,18 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         const offsetX = (this.width - radius * 2) / 2;
         const offsetY = (this.height - radius * 2) / 2;
         this.setCircle(radius, offsetX, offsetY);
+        this.speedMultiplier = 1;
+        this.healthBar = new HealthBar(scene, this);
+    }
+
+    preUpdate(time, delta) {
+        super.preUpdate(time, delta);
+        this.healthBar.updatePosition();
+    }
+
+    destroy(fromScene) {
+        this.healthBar.destroy();
+        super.destroy(fromScene);
     }
 
     // wird jeden frame von der scene aufgerufen.
@@ -30,14 +43,22 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         }
 
         const angle = this.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
+        const speed = CAR.speed * this.speedMultiplier;
 
         if (cursors.up.isDown) {
-            this.scene.physics.velocityFromRotation(angle, CAR.speed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, speed, this.body.velocity);
         } else if (cursors.down.isDown) {
-            this.scene.physics.velocityFromRotation(angle, -CAR.speed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, -speed, this.body.velocity);
         } else {
             this.body.velocity.scale(CAR.friction);   // geschwindigkeit verringern
         }
+    }
+
+    activateSpeedBoost() {
+        this.speedMultiplier = SPEED_BOOST.multiplier;
+        this.scene.time.delayedCall(SPEED_BOOST.duration, () => {
+            this.speedMultiplier = 1;
+        });
     }
 
     // daten, die an den server geschickt werden

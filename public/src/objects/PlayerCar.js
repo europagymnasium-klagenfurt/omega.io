@@ -1,6 +1,7 @@
 // das eigene auto: physik und steuerung
 
 import { CAR, SPEED_BOOST } from "../config.js";
+import { HealthBar } from "./HealthBar.js";
 
 export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y) {
@@ -12,6 +13,17 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         this.setAngle(90);
         this.setCircle(CAR.hitbox.radius, CAR.hitbox.offsetX, CAR.hitbox.offsetY);
         this.speedMultiplier = 1;
+        this.healthBar = new HealthBar(scene, this);
+    }
+
+    preUpdate(time, delta) {
+        super.preUpdate(time, delta);
+        this.healthBar.updatePosition();
+    }
+
+    destroy(fromScene) {
+        this.healthBar.destroy();
+        super.destroy(fromScene);
     }
 
     // wird jeden frame von der scene aufgerufen.

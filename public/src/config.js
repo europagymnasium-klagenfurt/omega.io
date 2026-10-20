@@ -34,3 +34,26 @@ export const SPEED_BOOST = {
     messageFontSize: "56px",
     messageY: VIEW_HEIGHT / 4,
 };
+
+export const COLLISION_MESSAGE = {
+    fontSize: 112,
+    popScale: 1.25,
+    fadeDelay: 500,
+    fadeDuration: 450,
+};
+
+export const HEALTH_BAR = {
+    points: 5,
+    heartSize: 20,
+    heartSpacing: 20,
+    offset: 18,
+};
+
+export const PLAYER_HUD = {
+    width: 240,
+    margin: 16,
+    padding: 12,
+    titleHeight: 24,
+    rowHeight: 22,
+    fontSize: 14,
+};

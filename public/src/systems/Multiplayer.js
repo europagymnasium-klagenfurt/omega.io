@@ -4,9 +4,10 @@ import { socket, EVENTS } from "../network.js";
 import { RemoteCar } from "../objects/RemoteCar.js";
 
 export class Multiplayer {
-    constructor(scene, localCar, playerHud) {
+    constructor(scene, localCar, carCollisions, playerHud) {
         this.scene = scene;
         this.localCar = localCar;
+        this.carCollisions = carCollisions;
         this.playerHud = playerHud;
         this.playerId = null;
         this.remoteCars = {};
@@ -52,11 +53,14 @@ export class Multiplayer {
 
     addRemoteCar(player) {
         if (player.id === this.playerId || this.remoteCars[player.id]) return;   // eigene id, oder player id gibt es schon
-        this.remoteCars[player.id] = new RemoteCar(this.scene, player);
+        const remoteCar = new RemoteCar(this.scene, player);
+        this.remoteCars[player.id] = remoteCar;
+        this.carCollisions.addRemoteCar(remoteCar);
     }
 
     removeRemoteCar(id) {
         if (this.remoteCars[id]) {
+            this.carCollisions.removeRemoteCar(id);
             this.remoteCars[id].destroy();
             delete this.remoteCars[id];
         }
@@ -71,5 +75,6 @@ export class Multiplayer {
         for (const [event, handler] of Object.entries(this.handlers)) {
             socket.off(event, handler);
         }
+        this.carCollisions.destroy();
     }
 }

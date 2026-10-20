@@ -4,6 +4,8 @@
 
 import { WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
+import { CarCollisions } from "../systems/CarCollisions.js";
+import { CollisionMessage } from "../systems/CollisionMessage.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
 import { PlayerHud } from "../systems/PlayerHud.js";
 
@@ -23,8 +25,10 @@ export class GameScene extends Phaser.Scene {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        this.collisionMessage = new CollisionMessage(this);
+        this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);
         this.playerHud = new PlayerHud(this);
-        this.multiplayer = new Multiplayer(this, this.car, this.playerHud);
+    this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud);
     }
 
     update(time, delta) {

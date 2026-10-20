@@ -15,6 +15,13 @@ export const CAR = {
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };
 
+export const COLLISION_MESSAGE = {
+    fontSize: 112,
+    popScale: 1.25,
+    fadeDelay: 500,
+    fadeDuration: 450,
+};
+
 export const HEALTH_BAR = {
     points: 5,
     heartSize: 20,

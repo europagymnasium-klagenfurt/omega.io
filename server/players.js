@@ -6,13 +6,21 @@ const players = {};
 
 export function addPlayer(id) {
     const n = Object.keys(players).length;   // anzahl der spieler
+    const usedColors = new Set(Object.values(players).map((player) => player.color));
+    let color = COLORS.find((candidate) => !usedColors.has(candidate));
+
+    if (color === undefined) {
+        do {
+            color = Math.floor(Math.random() * 0x1000000);
+        } while (usedColors.has(color));
+    }
 
     players[id] = {
         id: id,
         x: 400 + n * 100,
         y: 300,
         angle: 0,
-        color: COLORS[n % COLORS.length],
+        color: color,
     };
     return players[id];
 }

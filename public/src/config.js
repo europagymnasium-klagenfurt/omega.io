@@ -14,3 +14,10 @@ export const CAR = {
     scale: 0.5,
     hitbox: { radius: 50, offsetX: 14, offsetY: 65 },
 };
+
+export const COLLISION_MESSAGE = {
+    fontSize: 112,
+    popScale: 1.25,
+    fadeDelay: 500,
+    fadeDuration: 450,
+};

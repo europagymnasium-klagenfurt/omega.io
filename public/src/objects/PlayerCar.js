@@ -1,16 +1,34 @@
 // das eigene auto: physik und steuerung
 
-import { CAR } from "../config.js";
+import { CAR, SPEED_BOOST } from "../config.js";
+import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
+import { HealthBar } from "./HealthBar.js";
 
 export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y) {
-        super(scene, x, y, "car");
+    constructor(scene, x, y, vehicleKey = DEFAULT_VEHICLE_KEY) {
+        super(scene, x, y, vehicleKey);
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.setCollideWorldBounds(true).setScale(CAR.scale);
+        const scale = CAR.scale * CAR.referenceSize / Math.max(this.width, this.height);
+        this.setCollideWorldBounds(true).setScale(scale);
         this.setAngle(90);
-        this.setCircle(CAR.hitbox.radius, CAR.hitbox.offsetX, CAR.hitbox.offsetY);
+        const radius = Math.min(this.width, this.height) * CAR.hitbox.widthRatio / 2;
+        const offsetX = (this.width - radius * 2) / 2;
+        const offsetY = (this.height - radius * 2) / 2;
+        this.setCircle(radius, offsetX, offsetY);
+        this.speedMultiplier = 1;
+        this.healthBar = new HealthBar(scene, this);
+    }
+
+    preUpdate(time, delta) {
+        super.preUpdate(time, delta);
+        this.healthBar.updatePosition();
+    }
+
+    destroy(fromScene) {
+        this.healthBar.destroy();
+        super.destroy(fromScene);
     }
 
     // wird jeden frame von der scene aufgerufen.
@@ -36,12 +54,12 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         }
 
         const angle = this.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
-        const activeSpeed = shiftKey && shiftKey.isDown ? CAR.speed * CAR.shiftSpeedMultiplier : CAR.speed;
+        const speed = CAR.speed * this.speedMultiplier;
 
         if (cursors.up.isDown) {
-            this.scene.physics.velocityFromRotation(angle, activeSpeed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, speed, this.body.velocity);
         } else if (cursors.down.isDown) {
-            this.scene.physics.velocityFromRotation(angle, -activeSpeed, this.body.velocity);
+            this.scene.physics.velocityFromRotation(angle, -speed, this.body.velocity);
         } else {
             const glideFactor = shiftKey && shiftKey.isDown ? CAR.glideShift : CAR.glide;
             this.body.velocity.scale(glideFactor);   // geschwindigkeit verringern: normal kürzer, mit SHIFT deutlich länger
@@ -94,6 +112,13 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    activateSpeedBoost() {
+        this.speedMultiplier = SPEED_BOOST.multiplier;
+        this.scene.time.delayedCall(SPEED_BOOST.duration, () => {
+            this.speedMultiplier = 1;
+        });
+    }
+
     // daten, die an den server geschickt werden
     getState() {
         return { x: this.x, y: this.y, angle: this.angle };
@@ -103,6 +128,6 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
     applyServerData(player) {
         this.setPosition(player.x, player.y);
         this.setAngle(player.angle);
-        this.setTint(player.color);
+        if (player.vehicleKey) this.setTexture(player.vehicleKey);
     }
 }

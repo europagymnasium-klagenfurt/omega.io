@@ -7,10 +7,19 @@ export const EVENTS = {
     // client -> server
     READY: "ready",                  // client ist geladen und will mitspielen
     UPDATE: "update",                // eigene position {x, y, angle}
+    BOOST_PICKUP: "boostPickup",      // client möchte das speed-item einsammeln
+    SHOOT: "shoot",                  // eigener schuss {x, y, vx, vy}
+    HIT: "hit",                      // eigener schuss hat ein anderes auto getroffen {targetId}
 
     // server -> client
     INIT: "init",                    // {id, players} an den neuen spieler
     PLAYER_JOINED: "playerJoined",   // player an alle anderen
     PLAYER_MOVED: "playerMoved",     // {id, x, y, angle}
     PLAYER_LEFT: "playerLeft",       // {id}
+    BOOST_PICKUP_TAKEN: "boostPickupTaken", // item wurde eingesammelt
+    BOOST_PICKUP_RESPAWNED: "boostPickupRespawned", // item ist wieder verfügbar
+    BOOST_PICKUP_REJECTED: "boostPickupRejected", // einsammeln war nicht gültig
+    BOOST_GRANTED: "boostGranted",   // speed-boost nur für den sammler
+    SHOT_FIRED: "shotFired",         // {id, x, y, vx, vy} schuss eines anderen spielers
+    HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
 };

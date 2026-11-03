@@ -3,6 +3,7 @@
 
 import { VIEW_WIDTH, VIEW_HEIGHT, DEBUG } from "./config.js";
 import { PreloadScene } from "./scenes/PreloadScene.js";
+import { MenuScene } from "./scenes/MenuScene.js";
 import { GameScene } from "./scenes/GameScene.js";
 
 new Phaser.Game({
@@ -10,7 +11,7 @@ new Phaser.Game({
     width: VIEW_WIDTH,
     height: VIEW_HEIGHT,
     parent: "game-container",
-    scene: [PreloadScene, GameScene],   // die erste scene startet automatisch
+    scene: [PreloadScene, MenuScene, GameScene],   // die erste scene startet automatisch
     scale: {
         mode: Phaser.Scale.FIT,                 // spiel skaliert mit, seitenverhältnis bleibt erhalten
         autoCenter: Phaser.Scale.CENTER_BOTH,

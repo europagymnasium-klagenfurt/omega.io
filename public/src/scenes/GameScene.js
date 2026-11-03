@@ -2,7 +2,7 @@
 // diese datei soll KURZ bleiben. neue features als eigene klasse in objects/ oder systems/
 // schreiben und hier nur erzeugen und in update() aufrufen.
 
-import { WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
+import { WORLD_WIDTH, WORLD_HEIGHT, CONTROLS } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
 import { GarageAccess } from "../systems/GarageAccess.js";
 import { FPSCounter } from "../objects/FPSCounter.js";
@@ -11,6 +11,8 @@ import { CollisionMessage } from "../systems/CollisionMessage.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
 import { SpeedBoost } from "../systems/SpeedBoost.js";
 import { PlayerHud } from "../systems/PlayerHud.js";
+import { MachineGun } from "../systems/MachineGun.js";
+import { PlayerHealth } from "../systems/PlayerHealth.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -27,7 +29,7 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         this.cameras.main.startFollow(this.car, true);
 
-        this.cursors = this.input.keyboard.createCursorKeys();
+        this.cursors = this.input.keyboard.addKeys(CONTROLS);   // WASD, gleiche namen wie die pfeiltasten
 
         this.speedBoost = new SpeedBoost(this, this.car);
         this.fpsCounter = new FPSCounter(this);
@@ -35,10 +37,13 @@ export class GameScene extends Phaser.Scene {
         this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);
         this.playerHud = new PlayerHud(this);
         this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud);
+        this.playerHealth = new PlayerHealth(this, this.car, this.multiplayer);   // nach multiplayer, braucht dessen autos
+        this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
     }
 
     update(time, delta) {
-        this.car.drive(this.cursors);
+        if (this.playerHealth.isAlive()) this.car.drive(this.cursors);
+        this.machineGun.update(time);
         this.fpsCounter.update(delta);
         this.multiplayer.sendState();
     }

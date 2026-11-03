@@ -16,6 +16,28 @@ export const CAR = {
     hitbox: { widthRatio: 0.78 },
 };
 
+export const SPAWN_INTRO = {
+    duration: 2800,
+    fadeDuration: 1000,
+    smokeLifespan: 1800,
+    smokeFrequency: 60,
+    smokeFadeFrequency: 300,
+    smokeQuantity: 3,
+    rotation: 1080,
+    vehicleSpeed: 150,
+    driftSpeed: 120,
+};
+
+export const EXHAUST_SMOKE = {
+    frequency: 90,
+    quantity: 2,
+    lifespan: 1200,
+    speed: 45,
+    scale: { start: 0.16, end: 0.8 },
+    alpha: { start: 0.65, end: 0 },
+    rearOffset: 64,
+};
+
 export const SPEED_BOOST = {
     x: WORLD_WIDTH / 2,
     y: WORLD_HEIGHT / 2,

@@ -12,6 +12,7 @@ export class MenuScene extends Phaser.Scene {
     create(data) {
         this.categoryIndex = 0;
         this.vehicleIndex = 0;
+        this.transitioning = false;
         this.vehicleChangeUsed = Boolean(data?.vehicleChangeUsed);
         const savedCategoryIndex = VEHICLE_CATEGORIES.findIndex((category) =>
             category.vehicles.some((vehicle) => vehicle.key === data?.vehicleKey));
@@ -117,6 +118,12 @@ export class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
         const preview = this.add.image(VIEW_WIDTH / 2, 380, selectedVehicle.key);
         preview.setScale(Math.min(300 / preview.width, 270 / preview.height));
+        preview.setName("previewVehicle");
+        this.previewVehicle = preview;
+
+        preview.setName("previewVehicle");
+        this.previewVehicle = preview;
+        this.addVehicleSelectionAnimation(preview);
         const vehicleName = this.add.text(VIEW_WIDTH / 2, 560, selectedVehicle.name, {
             color: "#f5f7f2",
             fontFamily: "monospace",
@@ -167,6 +174,57 @@ export class MenuScene extends Phaser.Scene {
         });
     }
 
+    addVehicleSelectionAnimation(preview) {
+        if (!preview) return;
+
+        const startScaleX = preview.scaleX || 1;
+        const startScaleY = preview.scaleY || 1;
+        this.tweens.add({
+            targets: preview,
+            x: preview.x + 10,
+            y: preview.y - 8,
+            scaleX: startScaleX * 1.08,
+            scaleY: startScaleY * 1.08,
+            duration: 160,
+            ease: "Back.Out",
+            yoyo: true,
+            repeat: 1,
+            onComplete: () => {
+                preview.setPosition(VIEW_WIDTH / 2, 380);
+                preview.setScale(startScaleX, startScaleY);
+            },
+        });
+
+        const driver = this.add.container(preview.x + 10, preview.y + 12);
+        const seat = this.add.rectangle(0, 10, 26, 18, 0x1b1d22, 0.9);
+        const head = this.add.circle(0, -8, 8, 0xf0c29d);
+        driver.add([seat, head]);
+        this.selectionContainer.add(driver);
+        this.tweens.add({
+            targets: driver,
+            y: preview.y + 18,
+            duration: 130,
+            ease: "Quad.easeOut",
+            yoyo: true,
+            repeat: 1,
+            onComplete: () => driver.destroy(),
+        });
+
+        const smoke = this.add.particles(preview.x - 110, preview.y + 26, "boostSmoke", {
+            speed: { min: 20, max: 60 },
+            angle: { min: 150, max: 200 },
+            rotate: { min: 0, max: 360 },
+            scale: { start: 0.20, end: 0.9 },
+            alpha: { start: 0.75, end: 0 },
+            lifespan: 600,
+            quantity: 3,
+            frequency: 50,
+            maxParticles: 18,
+        });
+        smoke.setDepth(10);
+        this.time.delayedCall(650, () => smoke.destroy());
+    }
+
     selectVehicle(direction) {
         const vehicleCount = VEHICLE_CATEGORIES[this.categoryIndex].vehicles.length;
         this.vehicleIndex = (this.vehicleIndex + direction + vehicleCount) % vehicleCount;
@@ -174,10 +232,45 @@ export class MenuScene extends Phaser.Scene {
     }
 
     startGame() {
+        if (this.transitioning) return;
+
         const vehicle = VEHICLE_CATEGORIES[this.categoryIndex].vehicles[this.vehicleIndex];
-        this.scene.start("GameScene", {
-            vehicleKey: vehicle.key,
-            vehicleChangeUsed: this.vehicleChangeUsed,
+        this.transitioning = true;
+        this.playButton.disableInteractive();
+
+        const garageExitCar = this.add.image(this.previewVehicle?.x ?? VIEW_WIDTH / 2, this.previewVehicle?.y ?? 380, vehicle.key);
+        garageExitCar.setScale(this.previewVehicle?.scaleX ?? 1, this.previewVehicle?.scaleY ?? 1);
+        garageExitCar.setDepth(5);
+
+        const garageShadow = this.add.rectangle(VIEW_WIDTH / 2, 432, 300, 42, 0x000000, 0.25);
+        garageShadow.setDepth(4);
+
+        this.tweens.add({
+            targets: garageShadow,
+            scaleX: 1.5,
+            alpha: 0,
+            duration: 850,
+            ease: "Cubic.Out",
+        });
+
+        this.tweens.add({
+            targets: garageExitCar,
+            x: VIEW_WIDTH + 260,
+            y: 470,
+            rotation: 1.4,
+            scaleX: 0.9,
+            scaleY: 0.9,
+            alpha: 0.15,
+            duration: 950,
+            ease: "Cubic.In",
+            onComplete: () => {
+                garageExitCar.destroy();
+                garageShadow.destroy();
+                this.scene.start("GameScene", {
+                    vehicleKey: vehicle.key,
+                    vehicleChangeUsed: this.vehicleChangeUsed,
+                });
+            },
         });
     }
 }

@@ -1,8 +1,8 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer } from "./players.js";
-import { SPEED_BOOST } from "../public/src/config.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
@@ -48,6 +48,32 @@ export function setupNetwork(io) {
                 boostRespawnTimer = null;
                 io.emit(EVENTS.BOOST_PICKUP_RESPAWNED);
             }, SPEED_BOOST.respawnDelay);
+        });
+
+        // schuss an alle anderen weitergeben
+        socket.on(EVENTS.SHOOT, (data = {}) => {
+            if (!getPlayer(id)) return;
+            socket.broadcast.emit(EVENTS.SHOT_FIRED, { id: id, x: data.x, y: data.y, vx: data.vx, vy: data.vy });
+        });
+
+        // treffer prüfen, lebenspunkte abziehen und allen die neuen werte schicken
+        let lastHitTime = 0;
+        socket.on(EVENTS.HIT, (data = {}) => {
+            const shooter = getPlayer(id);
+            const target = getPlayer(data.targetId);
+            if (!shooter || !target || target.id === id || target.health <= 0) return;
+
+            // nicht öfter treffen als geschossen werden kann
+            const now = Date.now();
+            if (now - lastHitTime < MACHINE_GUN.fireRate / 2) return;
+
+            // ziel muss in schussweite sein
+            const distance = Math.hypot(shooter.x - target.x, shooter.y - target.y);
+            if (distance > MACHINE_GUN.range + MACHINE_GUN.hitTolerance) return;
+
+            lastHitTime = now;
+            damagePlayer(target.id, MACHINE_GUN.damage);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
         });
 
         socket.on("disconnect", () => {

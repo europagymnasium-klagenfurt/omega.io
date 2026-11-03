@@ -29,6 +29,8 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         this.cameras.main.startFollow(this.car, true);
 
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
         this.cursors = this.input.keyboard.addKeys(CONTROLS);   // WASD, gleiche namen wie die pfeiltasten
 
         this.speedBoost = new SpeedBoost(this, this.car);
@@ -42,6 +44,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
+        this.car.drive(this.cursors, this.shiftKey);
         if (this.playerHealth.isAlive()) this.car.drive(this.cursors);
         this.machineGun.update(time);
         this.fpsCounter.update(delta);

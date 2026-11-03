@@ -16,6 +16,7 @@ export class PreloadScene extends Phaser.Scene {
             this.load.image(vehicle.key, `assets/${vehicle.image}`);
         }
         this.load.image("car", "assets/car1.png");
+        this.load.image("starParticle", "assets/starparticle.png");
         this.load.image("speedBoost", "assets/velo.webp");
     }
 

@@ -2,7 +2,7 @@
 // diese datei soll KURZ bleiben. neue features als eigene klasse in objects/ oder systems/
 // schreiben und hier nur erzeugen und in update() aufrufen.
 
-import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_INTRO } from "../config.js";
+import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_INTRO, CONTROLS } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
 import { GarageAccess } from "../systems/GarageAccess.js";
 import { FPSCounter } from "../objects/FPSCounter.js";
@@ -12,6 +12,8 @@ import { Multiplayer } from "../systems/Multiplayer.js";
 import { SpeedBoost } from "../systems/SpeedBoost.js";
 import { PlayerHud } from "../systems/PlayerHud.js";
 import { ExhaustSmoke } from "../systems/ExhaustSmoke.js";
+import { MachineGun } from "../systems/MachineGun.js";
+import { PlayerHealth } from "../systems/PlayerHealth.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -33,7 +35,9 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.car, true);
         this.cameras.main.setZoom(1.9);
 
-        this.cursors = this.input.keyboard.createCursorKeys();
+        this.arrowKeys = this.input.keyboard.createCursorKeys();
+        this.cursors = this.input.keyboard.addKeys(CONTROLS);
+        this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
         this.setupIntroAnimation();
     }
 
@@ -49,7 +53,7 @@ export class GameScene extends Phaser.Scene {
         this.car.setAlpha(1);
         this.car.setAngularVelocity(0);
         this.car.setVelocity(0, 0);
-        this.car.healthBar.container.setVisible(false);
+        this.car.healthBar.graphics.setVisible(false);
 
         this.tweens.add({
             targets: this.cameras.main,
@@ -121,7 +125,7 @@ export class GameScene extends Phaser.Scene {
                     Phaser.Math.RadToDeg(Math.atan2(velocity.y, velocity.x) + Math.PI / 2),
                 );
             }
-            this.car.healthBar.container.setVisible(true);
+            this.car.healthBar.graphics.setVisible(true);
             this.isIntroActive = false;
             this.setupGameplay();
             this.time.delayedCall(
@@ -140,6 +144,8 @@ export class GameScene extends Phaser.Scene {
         this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);
         this.playerHud = new PlayerHud(this);
         this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud);
+        this.playerHealth = new PlayerHealth(this, this.car, this.multiplayer);
+        this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
     }
 
@@ -149,10 +155,22 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        this.car.drive(this.cursors);
-        this.exhaustSmoke.update(this.cursors.up.isDown);
+        const movementInput = this.getMovementInput();
+        const isAlive = this.playerHealth.isAlive();
+        if (isAlive) this.car.drive(movementInput, this.shiftKey);
+        this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
+        this.machineGun.update(time);
         this.fpsCounter.update(delta);
         this.multiplayer.sendState();
+    }
+
+    getMovementInput() {
+        return {
+            up: { isDown: this.arrowKeys.up.isDown || this.cursors.up.isDown },
+            left: { isDown: this.arrowKeys.left.isDown || this.cursors.left.isDown },
+            down: { isDown: this.arrowKeys.down.isDown || this.cursors.down.isDown },
+            right: { isDown: this.arrowKeys.right.isDown || this.cursors.right.isDown },
+        };
     }
 
     updateIntroDrift(delta) {

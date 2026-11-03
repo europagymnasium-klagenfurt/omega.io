@@ -2,7 +2,7 @@
 // neue assets hier laden, damit sie in jeder scene verfügbar sind.
 
 import { ALL_VEHICLES } from "/shared/vehicles.js";
-import { SPEED_BOOST } from "../config.js";
+import { SPEED_BOOST, MACHINE_GUN } from "../config.js";
 
 export class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -17,6 +17,7 @@ export class PreloadScene extends Phaser.Scene {
         }
         this.load.audio("startEngine", "assets/Start.mp3");
         this.load.image("car", "assets/car1.png");
+        this.load.image("starParticle", "assets/starparticle.png");
         this.load.image("speedBoost", "assets/velo.webp");
     }
 
@@ -38,6 +39,14 @@ export class PreloadScene extends Phaser.Scene {
         context.fillStyle = gradient;
         context.fillRect(0, 0, textureSize, textureSize);
         smokeTexture.refresh();
+
+        // kleiner runder punkt für das maschinengewehr
+        const bulletSize = MACHINE_GUN.bulletSize;
+        const bulletGraphics = this.make.graphics({}, false);
+        bulletGraphics.fillStyle(MACHINE_GUN.bulletColor, 1);
+        bulletGraphics.fillCircle(bulletSize / 2, bulletSize / 2, bulletSize / 2);
+        bulletGraphics.generateTexture("bullet", bulletSize, bulletSize);
+        bulletGraphics.destroy();
 
         this.scene.start("MenuScene");
     }

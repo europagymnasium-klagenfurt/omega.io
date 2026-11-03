@@ -1,6 +1,7 @@
 // verwaltet alle spieler am server (nur daten, kein socket-code)
 
 import { DEFAULT_VEHICLE_KEY, getVehicle } from "../shared/vehicles.js";
+import { HEALTH_BAR, ARMOR } from "../public/src/config.js";
 
 const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
 
@@ -24,8 +25,21 @@ export function addPlayer(id) {
         angle: 0,
         vehicleKey: DEFAULT_VEHICLE_KEY,
         color: color,
+        health: HEALTH_BAR.points,
+        armor: ARMOR.default,
     };
     return players[id];
+}
+
+// lebenspunkte abziehen, die panzerung verringert den schaden (damage / armor).
+// auf 3 kommastellen runden, sonst wird aus 5 - 0.1 - 0.1 ... z.b. 4.199999
+export function damagePlayer(id, damage) {
+    const player = players[id];
+    if (!player) return null;
+
+    const health = player.health - damage / player.armor;
+    player.health = Math.max(0, Math.round(health * 1000) / 1000);
+    return player;
 }
 
 export function getPlayer(id) {
@@ -37,6 +51,7 @@ export function setPlayerVehicle(id, vehicleKey) {
     if (!player) return null;
 
     player.vehicleKey = getVehicle(vehicleKey).key;
+    player.armor = ARMOR[player.vehicleKey] ?? ARMOR.default;
     return player;
 }
 

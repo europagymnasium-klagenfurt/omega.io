@@ -5,12 +5,15 @@ export const VIEW_HEIGHT = 800;
 export const WORLD_WIDTH = VIEW_WIDTH * 2;
 export const WORLD_HEIGHT = VIEW_HEIGHT * 2;
 
-export const DEBUG = true;   // zeigt die hitboxen an
+export const DEBUG = false;  // zeigt die hitboxen an
 
 export const CAR = {
     rotationSpeed: 150,   // grad pro sekunde
+    turnBoostMultiplier: 2, // wenn SHIFT gedrückt ist, wird die drehung vervielfacht
     speed: 600,           // pixel pro sekunde
-    friction: 0.97,       // geschwindigkeit wird pro frame damit multipliziert, wenn kein gas
+    shiftSpeedMultiplier: 0.7, // mit SHIFT: 30% langsamer
+    glide: 0.965,         // normale gleitdistanz leicht erhöht
+    glideShift: 0.97,     // mit SHIFT: gleitdistanz noch länger, aber nicht mehr so extrem
     scale: 0.5,
     referenceSize: 235,   // längste seite des bisherigen autos
     hitbox: { widthRatio: 0.78 },
@@ -36,6 +39,14 @@ export const EXHAUST_SMOKE = {
     scale: { start: 0.16, end: 0.8 },
     alpha: { start: 0.65, end: 0 },
     rearOffset: 64,
+};
+
+// tastenbelegung zum fahren (namen wie in Phaser.Input.Keyboard.KeyCodes)
+export const CONTROLS = {
+    up: "W",
+    left: "A",
+    down: "S",
+    right: "D",
 };
 
 export const SPEED_BOOST = {
@@ -65,11 +76,36 @@ export const COLLISION_MESSAGE = {
     fadeDuration: 450,
 };
 
+export const MACHINE_GUN = {
+    fireRate: 80,         // millisekunden zwischen zwei schüssen
+    bulletSpeed: 700,     // pixel pro sekunde, kommt zur geschwindigkeit des autos dazu
+    range: 250,           // so weit fliegt ein schuss (vom auto aus gesehen), dann verschwindet er
+    bulletSize: 6,        // durchmesser eines punktes
+    bulletColor: 0xffee66,
+    muzzleOffset: 10,     // abstand vor der autonase, wo der schuss startet
+    damage: 0.1,          // so viele lebenspunkte kostet ein treffer (bei armor 1)
+    hitTolerance: 150,    // server: treffer gilt nur, wenn ziel höchstens range + das entfernt ist
+};
+
+// panzerung pro fahrzeug: abgezogen wird damage / armor.
+// armor 2 = halber schaden = hält doppelt so viel aus. fahrzeuge ohne eintrag haben "default".
+export const ARMOR = {
+    default: 1,
+    "monster-croc": 2,
+    "monster-shark": 2,
+    "monster-face": 2,
+};
+
 export const HEALTH_BAR = {
-    points: 5,
-    heartSize: 20,
-    heartSpacing: 20,
-    offset: 18,
+    points: 5,                // maximale lebenspunkte
+    width: 70,                // balken bei voller gesundheit
+    height: 8,
+    border: 1,                // dunkler rand um den balken
+    offset: 14,               // abstand über dem auto
+    backgroundColor: 0x222222,
+    colorFull: 0x33dd33,      // grün
+    colorHalf: 0xff9900,      // orange
+    colorEmpty: 0xff2222,     // rot
 };
 
 export const PLAYER_HUD = {

@@ -161,6 +161,7 @@ export class GameScene extends Phaser.Scene {
         this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
         this.machineGun.update(time);
         this.fpsCounter.update(delta);
+        this.playerHud.updateSpeed(this.car.getSpeedKmh());
         this.multiplayer.sendState();
     }
 

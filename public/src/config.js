@@ -114,5 +114,6 @@ export const PLAYER_HUD = {
     padding: 12,
     titleHeight: 24,
     rowHeight: 22,
+    speedRowHeight: 20,
     fontSize: 14,
 };

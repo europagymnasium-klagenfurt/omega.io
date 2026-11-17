@@ -119,6 +119,11 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         });
     }
 
+    getSpeedKmh() {
+        if (!this.body) return 0;
+        return Math.hypot(this.body.velocity.x, this.body.velocity.y) * 0.2;
+    }
+
     // daten, die an den server geschickt werden
     getState() {
         return { x: this.x, y: this.y, angle: this.angle };

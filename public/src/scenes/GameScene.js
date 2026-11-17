@@ -13,6 +13,7 @@ import { PlayerHud } from "../systems/PlayerHud.js";
 import { ExhaustSmoke } from "../systems/ExhaustSmoke.js";
 import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
+import { ObstacleField } from "../systems/ObstacleField.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -24,6 +25,7 @@ export class GameScene extends Phaser.Scene {
         this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, "racetrack").setOrigin(0, 0);
 
         this.car = new PlayerCar(this, 400, 300, data?.vehicleKey);
+        this.obstacleField = new ObstacleField(this, this.car);
         this.playerName = data?.playerName || "";
         this.vehicleChangeUsed = Boolean(data?.vehicleChangeUsed);
         this.car.setVisible(false);

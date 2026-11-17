@@ -109,11 +109,37 @@ export const HEALTH_BAR = {
 };
 
 export const PLAYER_HUD = {
-    width: 240,
+    width: 260,
     margin: 16,
     padding: 12,
-    titleHeight: 24,
+    baseHeight: 150,
+    listTitleY: 118,
+    listStartY: 148,
     rowHeight: 22,
-    speedRowHeight: 20,
+    gaugeWidth: 180,
+    gaugeY: 100,
+    gaugeBackgroundHeight: 10,
+    gaugeFillHeight: 8,
+    speedValueY: 42,
+    speedUnitY: 78,
+    garageButtonWidth: 92,
+    garageButtonHeight: 22,
+    garageButtonY: 129,
+    garageButtonFontSize: 10,
+    maxSpeedKmh: 260,
+    fpsRefreshInterval: 500,
+    valueFontSize: 38,
+    smallFontSize: 12,
+    fontSize: 14,
+};
+
+export const PLAYER_NAME = {
+    maxLength: 18,
+    storageKey: "omegaPlayerName",
+    fieldX: 165,
+    fieldY: 70,
+    fieldWidth: 260,
+    fieldHeight: 38,
+    labelY: 39,
     fontSize: 14,
 };

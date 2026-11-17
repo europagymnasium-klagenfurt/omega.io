@@ -5,7 +5,6 @@
 import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_INTRO, CONTROLS } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
 import { GarageAccess } from "../systems/GarageAccess.js";
-import { FPSCounter } from "../objects/FPSCounter.js";
 import { CarCollisions } from "../systems/CarCollisions.js";
 import { CollisionMessage } from "../systems/CollisionMessage.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
@@ -25,11 +24,11 @@ export class GameScene extends Phaser.Scene {
         this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, "racetrack").setOrigin(0, 0);
 
         this.car = new PlayerCar(this, 400, 300, data?.vehicleKey);
+        this.playerName = data?.playerName || "";
+        this.vehicleChangeUsed = Boolean(data?.vehicleChangeUsed);
         this.car.setVisible(false);
         this.car.setAlpha(0);
         this.isIntroActive = true;
-
-        if (!data?.vehicleChangeUsed) this.garageAccess = new GarageAccess(this, this.car);
 
         this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         this.cameras.main.startFollow(this.car, true);
@@ -139,11 +138,11 @@ export class GameScene extends Phaser.Scene {
 
     setupGameplay() {
         this.speedBoost = new SpeedBoost(this, this.car);
-        this.fpsCounter = new FPSCounter(this);
         this.collisionMessage = new CollisionMessage(this);
         this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);
         this.playerHud = new PlayerHud(this);
-        this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud);
+        if (!this.vehicleChangeUsed) this.garageAccess = new GarageAccess(this, this.car, this.playerHud);
+        this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud, this.playerName);
         this.playerHealth = new PlayerHealth(this, this.car, this.multiplayer);
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
@@ -160,8 +159,7 @@ export class GameScene extends Phaser.Scene {
         if (isAlive) this.car.drive(movementInput, this.shiftKey);
         this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
         this.machineGun.update(time);
-        this.fpsCounter.update(delta);
-        this.playerHud.updateSpeed(this.car.getSpeedKmh());
+        this.playerHud.update(this.car.getSpeedKmh(), delta);
         this.multiplayer.sendState();
     }
 

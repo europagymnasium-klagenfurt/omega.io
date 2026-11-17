@@ -5,6 +5,8 @@ export class PlayerHud {
         this.scene = scene;
         this.players = {};
         this.rows = [];
+        this.fpsElapsed = 0;
+        this.fpsFrames = 0;
 
         this.container = scene.add.container(
             VIEW_WIDTH - PLAYER_HUD.width - PLAYER_HUD.margin,
@@ -15,7 +17,7 @@ export class PlayerHud {
             0,
             0,
             PLAYER_HUD.width,
-            120,
+            PLAYER_HUD.baseHeight,
             0x101820,
             0.88,
         ).setOrigin(0);
@@ -24,39 +26,57 @@ export class PlayerHud {
         this.title = scene.add.text(
             PLAYER_HUD.padding,
             PLAYER_HUD.padding,
-            "SPEED",
-            { color: "#8ad8ff", fontSize: "12px", fontStyle: "bold" },
+            "FAHRER-DASHBOARD",
+            { color: "#8ad8ff", fontSize: `${PLAYER_HUD.smallFontSize}px`, fontStyle: "bold" },
+        );
+
+        this.fpsText = scene.add.text(
+            PLAYER_HUD.width - PLAYER_HUD.padding,
+            PLAYER_HUD.padding,
+            "FPS: ---",
+            {
+                color: "#cfe4ff",
+                fontSize: `${PLAYER_HUD.smallFontSize}px`,
+                fontStyle: "bold",
+            },
+        ).setOrigin(1, 0);
+
+        this.playerListTitle = scene.add.text(
+            PLAYER_HUD.padding,
+            PLAYER_HUD.listTitleY,
+            "SPIELER",
+            { color: "#8ad8ff", fontSize: `${PLAYER_HUD.smallFontSize}px`, fontStyle: "bold" },
         );
 
         this.speedText = scene.add.text(
             PLAYER_HUD.width / 2,
-            42,
+            PLAYER_HUD.speedValueY,
             "0",
-            { color: "#ffffff", fontSize: "38px", fontStyle: "bold" },
+            { color: "#ffffff", fontSize: `${PLAYER_HUD.valueFontSize}px`, fontStyle: "bold" },
         ).setOrigin(0.5);
 
         this.unitText = scene.add.text(
             PLAYER_HUD.width / 2,
-            78,
+            PLAYER_HUD.speedUnitY,
             "km/h",
-            { color: "#cfe4ff", fontSize: "12px", fontStyle: "bold" },
+            { color: "#cfe4ff", fontSize: `${PLAYER_HUD.smallFontSize}px`, fontStyle: "bold" },
         ).setOrigin(0.5);
 
         this.gaugeBackground = scene.add.rectangle(
             PLAYER_HUD.width / 2,
-            92,
-            160,
-            10,
+            PLAYER_HUD.gaugeY,
+            PLAYER_HUD.gaugeWidth,
+            PLAYER_HUD.gaugeBackgroundHeight,
             0x1f2b3a,
             1,
         ).setOrigin(0.5);
         this.gaugeBackground.setStrokeStyle(1, 0x4a5a6b, 0.8);
 
         this.gaugeFill = scene.add.rectangle(
-            PLAYER_HUD.width / 2 - 80,
-            92,
+            PLAYER_HUD.width / 2 - PLAYER_HUD.gaugeWidth / 2,
+            PLAYER_HUD.gaugeY,
             0,
-            8,
+            PLAYER_HUD.gaugeFillHeight,
             0x4ec9f5,
             1,
         ).setOrigin(0, 0.5);
@@ -64,6 +84,8 @@ export class PlayerHud {
         this.container.add([
             this.background,
             this.title,
+            this.fpsText,
+            this.playerListTitle,
             this.speedText,
             this.unitText,
             this.gaugeBackground,
@@ -86,14 +108,22 @@ export class PlayerHud {
         this.updateRows();
     }
 
-    updateSpeed(speedKmh) {
+    update(speedKmh, delta) {
         const speed = Math.max(0, Math.round(speedKmh));
         this.speedText.setText(String(speed));
 
-        const maxSpeed = 260;
-        const fraction = Phaser.Math.Clamp(speed / maxSpeed, 0, 1);
-        this.gaugeFill.width = 160 * fraction;
+        const fraction = Phaser.Math.Clamp(speed / PLAYER_HUD.maxSpeedKmh, 0, 1);
+        this.gaugeFill.width = PLAYER_HUD.gaugeWidth * fraction;
         this.gaugeFill.setFillStyle(this.getGaugeColor(fraction));
+
+        this.fpsElapsed += delta;
+        this.fpsFrames += 1;
+        if (this.fpsElapsed >= PLAYER_HUD.fpsRefreshInterval) {
+            const fps = Math.round(this.fpsFrames * 1000 / this.fpsElapsed);
+            this.fpsText.setText(`FPS: ${fps}`);
+            this.fpsElapsed = 0;
+            this.fpsFrames = 0;
+        }
     }
 
     getGaugeColor(fraction) {
@@ -109,15 +139,15 @@ export class PlayerHud {
         this.rows = [];
 
         const players = Object.values(this.players);
-        const height = 120 + players.length * PLAYER_HUD.rowHeight;
+        const height = PLAYER_HUD.baseHeight + players.length * PLAYER_HUD.rowHeight;
         this.background.setSize(PLAYER_HUD.width, height);
 
         players.forEach((player, index) => {
             const color = `#${player.color.toString(16).padStart(6, "0")}`;
             const row = this.scene.add.text(
                 PLAYER_HUD.padding,
-                120 + index * PLAYER_HUD.rowHeight,
-                player.id,
+                PLAYER_HUD.listStartY + index * PLAYER_HUD.rowHeight,
+                player.name || "Unbekannt",
                 { color, fontSize: `${PLAYER_HUD.fontSize}px` },
             );
             this.rows.push(row);

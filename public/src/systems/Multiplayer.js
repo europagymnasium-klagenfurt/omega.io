@@ -4,11 +4,12 @@ import { socket, EVENTS } from "../network.js";
 import { RemoteCar } from "../objects/RemoteCar.js";
 
 export class Multiplayer {
-    constructor(scene, localCar, carCollisions, playerHud) {
+    constructor(scene, localCar, carCollisions, playerHud, playerName) {
         this.scene = scene;
         this.localCar = localCar;
         this.carCollisions = carCollisions;
         this.playerHud = playerHud;
+        this.playerName = playerName;
         this.playerId = null;
         this.remoteCars = {};
         this.latestState = localCar.getState();
@@ -28,7 +29,10 @@ export class Multiplayer {
         // listener wieder entfernen, wenn die scene beendet wird. sonst gibt es sie nach einem neustart doppelt.
         scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
 
-        socket.emit(EVENTS.READY, { vehicleKey: this.localCar.texture.key });
+        socket.emit(EVENTS.READY, {
+            vehicleKey: this.localCar.texture.key,
+            name: this.playerName,
+        });
         this.sendAtRefreshRate();
     }
 

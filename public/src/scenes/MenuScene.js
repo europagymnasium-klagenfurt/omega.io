@@ -1,4 +1,4 @@
-import { VIEW_WIDTH, VIEW_HEIGHT } from "../config.js";
+import { PLAYER_NAME, VIEW_WIDTH, VIEW_HEIGHT } from "../config.js";
 import { VEHICLE_CATEGORIES } from "/shared/vehicles.js";
 
 const CATEGORY_COLORS = [0xff765e, 0x9bdc4a, 0x55d7e5];
@@ -14,6 +14,9 @@ export class MenuScene extends Phaser.Scene {
         this.vehicleIndex = 0;
         this.transitioning = false;
         this.vehicleChangeUsed = Boolean(data?.vehicleChangeUsed);
+        this.playerName = localStorage.getItem(PLAYER_NAME.storageKey)
+            ?.slice(0, PLAYER_NAME.maxLength) ?? "";
+        this.nameInputFocused = false;
         const savedCategoryIndex = VEHICLE_CATEGORIES.findIndex((category) =>
             category.vehicles.some((vehicle) => vehicle.key === data?.vehicleKey));
         if (savedCategoryIndex >= 0) {
@@ -50,6 +53,39 @@ export class MenuScene extends Phaser.Scene {
             fontFamily: "monospace",
             fontSize: "14px",
         }).setOrigin(0.5);
+
+        this.add.text(PLAYER_NAME.fieldX, PLAYER_NAME.labelY, "FAHRERNAME", {
+            color: "#b3c2cb",
+            fontFamily: "monospace",
+            fontSize: `${PLAYER_NAME.fontSize}px`,
+            fontStyle: "bold",
+        }).setOrigin(0.5);
+        this.nameField = this.add.rectangle(
+            PLAYER_NAME.fieldX,
+            PLAYER_NAME.fieldY,
+            PLAYER_NAME.fieldWidth,
+            PLAYER_NAME.fieldHeight,
+            0x1b2a36,
+        ).setStrokeStyle(2, 0x4a5a60).setInteractive({ useHandCursor: true });
+        this.nameValue = this.add.text(
+            PLAYER_NAME.fieldX,
+            PLAYER_NAME.fieldY,
+            this.playerName || "Klicken und Namen eingeben",
+            {
+                color: this.playerName ? "#f5f7f2" : "#89969e",
+                fontFamily: "monospace",
+                fontSize: `${PLAYER_NAME.fontSize}px`,
+            },
+        ).setOrigin(0.5);
+        this.nameField.on("pointerdown", () => {
+            this.nameInputFocused = true;
+            this.nameField.setStrokeStyle(2, 0x55d7e5);
+        });
+        this.input.keyboard.on("keydown", this.handleNameInput, this);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.input.keyboard.off("keydown", this.handleNameInput, this);
+        });
+
         if (this.vehicleChangeUsed) {
             this.add.text(VIEW_WIDTH / 2, 112, "LETZTE ÄNDERUNG", {
                 color: "#ffb36b",
@@ -235,6 +271,8 @@ export class MenuScene extends Phaser.Scene {
         if (this.transitioning) return;
 
         const vehicle = VEHICLE_CATEGORIES[this.categoryIndex].vehicles[this.vehicleIndex];
+        this.playerName = this.playerName.trim().replace(/\s+/g, " ").slice(0, PLAYER_NAME.maxLength);
+        localStorage.setItem(PLAYER_NAME.storageKey, this.playerName);
         this.transitioning = true;
         this.playButton.disableInteractive();
 
@@ -269,8 +307,29 @@ export class MenuScene extends Phaser.Scene {
                 this.scene.start("GameScene", {
                     vehicleKey: vehicle.key,
                     vehicleChangeUsed: this.vehicleChangeUsed,
+                    playerName: this.playerName,
                 });
             },
         });
+    }
+
+    handleNameInput(event) {
+        if (!this.nameInputFocused) return;
+
+        event.preventDefault();
+        if (event.key === "Enter" || event.key === "Escape") {
+            this.nameInputFocused = false;
+            this.nameField.setStrokeStyle(2, 0x4a5a60);
+            return;
+        }
+
+        if (event.key === "Backspace") {
+            this.playerName = this.playerName.slice(0, -1);
+        } else if (event.key.length === 1 && this.playerName.length < PLAYER_NAME.maxLength) {
+            this.playerName += event.key;
+        }
+
+        this.nameValue.setText(this.playerName || "Klicken und Namen eingeben");
+        this.nameValue.setColor(this.playerName ? "#f5f7f2" : "#89969e");
     }
 }

@@ -14,7 +14,7 @@ export function setupNetwork(io) {
         const id = socket.id;
 
         socket.on(EVENTS.READY, (data = {}) => {
-            if (!getPlayer(id)) addPlayer(id);
+            if (!getPlayer(id)) addPlayer(id, data.name);
             setPlayerVehicle(id, data.vehicleKey);
             socket.emit(EVENTS.INIT, {
                 id: id,

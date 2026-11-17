@@ -1,14 +1,17 @@
 // verwaltet alle spieler am server (nur daten, kein socket-code)
 
 import { DEFAULT_VEHICLE_KEY, getVehicle } from "../shared/vehicles.js";
-import { HEALTH_BAR, ARMOR } from "../public/src/config.js";
+import { HEALTH_BAR, ARMOR, PLAYER_NAME } from "../public/src/config.js";
 
 const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
 
 const players = {};
 
-export function addPlayer(id) {
+export function addPlayer(id, requestedName) {
     const n = Object.keys(players).length;   // anzahl der spieler
+    const name = typeof requestedName === "string"
+        ? requestedName.trim().replace(/\s+/g, " ").slice(0, PLAYER_NAME.maxLength)
+        : "";
     const usedColors = new Set(Object.values(players).map((player) => player.color));
     let color = COLORS.find((candidate) => !usedColors.has(candidate));
 
@@ -20,6 +23,7 @@ export function addPlayer(id) {
 
     players[id] = {
         id: id,
+        name: name || `Spieler ${n + 1}`,
         x: 400 + n * 100,
         y: 300,
         angle: 0,

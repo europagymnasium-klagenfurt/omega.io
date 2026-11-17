@@ -2,7 +2,7 @@
 // neue assets hier laden, damit sie in jeder scene verfügbar sind.
 
 import { ALL_VEHICLES } from "/shared/vehicles.js";
-import { SPEED_BOOST, MACHINE_GUN } from "../config.js";
+import { SPEED_BOOST, MACHINE_GUN, OBSTACLES } from "../config.js";
 
 export class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -17,6 +17,9 @@ export class PreloadScene extends Phaser.Scene {
         }
         this.load.image("car", "assets/car1.png");
         this.load.image("speedBoost", "assets/velo.webp");
+        for (const obstacle of OBSTACLES.types) {
+            this.load.image(obstacle.key, `assets/${obstacle.asset}`);
+        }
     }
 
     create() {

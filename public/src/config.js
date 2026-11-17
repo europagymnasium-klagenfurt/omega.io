@@ -44,6 +44,23 @@ export const SPEED_BOOST = {
     messageY: VIEW_HEIGHT / 4,
 };
 
+export const OBSTACLES = {
+    seed: 482731,
+    count: 20,
+    attemptsPerObstacle: 80,
+    edgeMargin: 140,
+    spacing: 80,
+    spawn: { x: 400, y: 300, spacing: 100, count: 8, safeRadius: 150 },
+    boostSafeRadius: 180,
+    types: [
+        { key: "obstacle-tire", asset: "tires.png", width: 142, height: 142, bodyWidth: 132, bodyHeight: 132, weight: 5 },
+        { key: "obstacle-rubble", asset: "house.png", width: 150, height: 150, bodyWidth: 140, bodyHeight: 140, weight: 4 },
+        { key: "obstacle-wreck", asset: "brokencar.png", width: 132, height: 132, bodyWidth: 66, bodyHeight: 124, weight: 3 },
+        { key: "obstacle-wall", asset: "wall.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
+        { key: "obstacle-wall-top", asset: "wall from above.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
+    ],
+};
+
 export const COLLISION_MESSAGE = {
     fontSize: 112,
     popScale: 1.25,

@@ -17,6 +17,14 @@ export class Garage {
 
         const g = scene.add.graphics().setDepth(1);
 
+        // unsichtbare wände oben und unten, links und rechts bleibt offen (tunnel)
+        this.walls = scene.physics.add.staticGroup();
+        for (const wallY of [top + GARAGES.wallThickness / 2, bottom - GARAGES.wallThickness / 2]) {
+            const wall = scene.add.rectangle(this.x, wallY, w, GARAGES.wallThickness).setVisible(false);
+            scene.physics.add.existing(wall, true);
+            this.walls.add(wall);
+        }
+
         // schatten
         g.fillStyle(0x000000, 0.3);
         g.fillRoundedRect(left + 8, top + 10, w, h, 10);

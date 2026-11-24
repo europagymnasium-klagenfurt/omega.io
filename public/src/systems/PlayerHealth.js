@@ -36,6 +36,7 @@ export class PlayerHealth {
 
         this.car.healthBar.setHealth(health, maxHealth);
         if (health <= 0 && this.alive) this.die();
+        if (health > 0 && !this.alive) this.revive();
     }
 
     // eigenes auto anhalten. body.moves = false: auch zusammenstöße schieben es nicht mehr weg
@@ -44,6 +45,12 @@ export class PlayerHealth {
         this.car.setVelocity(0, 0);
         this.car.setAngularVelocity(0);
         this.car.body.moves = false;
+    }
+
+    // nach dem respawn: wieder steuerbar
+    revive() {
+        this.alive = true;
+        this.car.body.moves = true;
     }
 
     isAlive() {

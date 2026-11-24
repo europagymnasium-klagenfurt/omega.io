@@ -1,7 +1,7 @@
 // verwaltet alle spieler am server (nur daten, kein socket-code)
 
 import { DEFAULT_VEHICLE_KEY, getVehicle } from "../shared/vehicles.js";
-import { HEALTH_BAR, ARMOR, PLAYER_NAME } from "../public/src/config.js";
+import { HEALTH_BAR, ARMOR, PLAYER_NAME, SPAWN_SHIELD } from "../public/src/config.js";
 
 const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
 
@@ -31,8 +31,15 @@ export function addPlayer(id, requestedName) {
         color: color,
         health: HEALTH_BAR.points,
         armor: ARMOR.default,
+        spawnProtectedUntil: Date.now() + SPAWN_SHIELD.duration,
     };
     return players[id];
+}
+
+// true, solange der spawnschutz nach dem spawnen noch läuft. treffer dürfen dann keinen schaden machen.
+export function isSpawnProtected(id) {
+    const player = players[id];
+    return Boolean(player && Date.now() < player.spawnProtectedUntil);
 }
 
 // lebenspunkte abziehen, die panzerung verringert den schaden (damage / armor).

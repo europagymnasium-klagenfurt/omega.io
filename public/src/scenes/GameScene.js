@@ -2,7 +2,7 @@
 // diese datei soll KURZ bleiben. neue features als eigene klasse in objects/ oder systems/
 // schreiben und hier nur erzeugen und in update() aufrufen.
 
-import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_INTRO, CONTROLS } from "../config.js";
+import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_INTRO, SPAWN_SHIELD, CONTROLS } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
 import { GarageAccess } from "../systems/GarageAccess.js";
 import { CarCollisions } from "../systems/CarCollisions.js";
@@ -127,6 +127,7 @@ export class GameScene extends Phaser.Scene {
                 );
             }
             this.car.healthBar.graphics.setVisible(true);
+            this.car.activateSpawnShield(SPAWN_SHIELD.duration);
             this.isIntroActive = false;
             this.setupGameplay();
             this.time.delayedCall(

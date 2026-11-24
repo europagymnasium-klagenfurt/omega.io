@@ -1,7 +1,7 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer } from "./players.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, isSpawnProtected } from "./players.js";
 import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
@@ -62,6 +62,7 @@ export function setupNetwork(io) {
             const shooter = getPlayer(id);
             const target = getPlayer(data.targetId);
             if (!shooter || !target || target.id === id || target.health <= 0) return;
+            if (isSpawnProtected(target.id)) return;   // spawnschutz: treffer macht keinen schaden
 
             // nicht öfter treffen als geschossen werden kann
             const now = Date.now();

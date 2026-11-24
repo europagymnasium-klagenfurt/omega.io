@@ -3,6 +3,7 @@
 import { CAR } from "../config.js";
 import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
 import { HealthBar } from "./HealthBar.js";
+import { SpawnShield } from "./SpawnShield.js";
 
 export class RemoteCar extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, player) {
@@ -16,6 +17,10 @@ export class RemoteCar extends Phaser.Physics.Arcade.Sprite {
         this.setTint(player.color);
         this.setImmovable(true);
         this.healthBar = new HealthBar(scene, this);
+
+        this.spawnShield = null;
+        const shieldRemaining = player.spawnProtectedUntil ? player.spawnProtectedUntil - Date.now() : 0;
+        if (shieldRemaining > 0) this.spawnShield = new SpawnShield(scene, this, shieldRemaining);
     }
 
     setVehicle(vehicleKey) {
@@ -31,10 +36,12 @@ export class RemoteCar extends Phaser.Physics.Arcade.Sprite {
     preUpdate(time, delta) {
         super.preUpdate(time, delta);
         this.healthBar.updatePosition();
+        this.spawnShield?.updatePosition();
     }
 
     destroy(fromScene) {
         this.healthBar.destroy();
+        this.spawnShield?.destroy();
         super.destroy(fromScene);
     }
 

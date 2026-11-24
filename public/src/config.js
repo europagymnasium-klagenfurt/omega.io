@@ -105,10 +105,11 @@ export const GARAGES = {
     doorWidth: 170,
     doorHeight: 18,
     list: [
-        { name: "GARAGE NORDOST", x: 2100, y: 280 },
-        { name: "GARAGE WEST", x: 260, y: 800 },
-        { name: "GARAGE SÜDWEST", x: 650, y: 1360 },
-        { name: "GARAGE SÜDOST", x: 1850, y: 1330 },
+        { name: "GARAGE NORD", x: 1900, y: 330 },
+        { name: "GARAGE NORDOST", x: 3250, y: 420 },
+        { name: "GARAGE WEST", x: 340, y: 1200 },
+        { name: "GARAGE SÜDWEST", x: 1000, y: 2050 },
+        { name: "GARAGE SÜDOST", x: 2800, y: 2000 },
     ],
 };
 

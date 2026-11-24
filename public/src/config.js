@@ -266,3 +266,14 @@ export const REPAIR_KIT = {
     crossColor: 0xe53935,
     depth: 3,
 };
+
+export const HIT_FEEDBACK = {
+    flashColor: 0xff0000,
+    flashAlpha: 0.28,         // stärke des roten aufblitzens
+    flashDuration: 220,
+    shakeDuration: 120,
+    shakeIntensity: 0.004,
+    deathShakeDuration: 400,  // beim zerstört werden wackelt es länger und stärker
+    deathShakeIntensity: 0.012,
+    depth: 250,
+};

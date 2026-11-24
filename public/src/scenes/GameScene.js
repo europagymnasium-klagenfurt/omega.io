@@ -19,6 +19,7 @@ import { Scoreboard } from "../systems/Scoreboard.js";
 import { KillFeed } from "../systems/KillFeed.js";
 import { Respawn } from "../systems/Respawn.js";
 import { RepairKits } from "../systems/RepairKits.js";
+import { HitFeedback } from "../systems/HitFeedback.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -166,6 +167,7 @@ export class GameScene extends Phaser.Scene {
         this.killFeed = new KillFeed(this);
         this.respawn = new Respawn(this, this.car, this.multiplayer);
         this.repairKits = new RepairKits(this, this.car, this.playerHealth);
+        this.hitFeedback = new HitFeedback(this, this.multiplayer);
     }
 
     update(time, delta) {

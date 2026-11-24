@@ -1,30 +1,38 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer, healPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, RESPAWN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
+import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, checkRoundEnd } from "./rounds.js";
+import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
 const repairClaimed = REPAIR_KIT.positions.map(() => false);   // ist das kit gerade eingesammelt?
-const respawnTimers = {};   // spieler-id -> timer bis zum neustart nach dem tod
 
 export function setupNetwork(io) {
+    setupRounds(io);
+
     io.on("connection", (socket) => {
         console.log("a user connected " + socket.id);
 
         const id = socket.id;
 
         socket.on(EVENTS.READY, (data = {}) => {
-            if (!getPlayer(id)) addPlayer(id, data.name);
+            const isNew = !getPlayer(id);
+            if (isNew) {
+                addPlayer(id, data.name);
+                if (isRunning()) setSpectator(id);   // mitten in der runde: zusehen bis zur nächsten
+            }
             setPlayerVehicle(id, data.vehicleKey);
             socket.emit(EVENTS.INIT, {
                 id: id,
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
+                round: getRoundInfo(),
                 repairClaimed: repairClaimed,
             });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
+            if (isNew) onPlayerJoined();
         });
 
         socket.on(EVENTS.UPDATE, (data) => {
@@ -87,7 +95,7 @@ export function setupNetwork(io) {
         socket.on(EVENTS.HIT, (data = {}) => {
             const shooter = getPlayer(id);
             const target = getPlayer(data.targetId);
-            if (!shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
+            if (!isRunning() || !shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
 
             // nicht öfter treffen als geschossen werden kann
             const now = Date.now();
@@ -115,14 +123,8 @@ export function setupNetwork(io) {
                     victimDeaths: victim.deaths,
                 });
 
-                // nach kurzer zeit neu starten (wenn der spieler dann noch da ist)
-                respawnTimers[target.id] = setTimeout(() => {
-                    delete respawnTimers[target.id];
-                    const player = respawnPlayer(target.id);
-                    if (!player) return;
-                    io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
-                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
-                }, RESPAWN.delay);
+                // ausgeschieden bis zur nächsten runde: ist nur noch einer übrig, ist die runde vorbei
+                checkRoundEnd();
             }
         });
 
@@ -130,7 +132,7 @@ export function setupNetwork(io) {
         let lastObstacleHitTime = 0;
         socket.on(EVENTS.OBSTACLE_HIT, () => {
             const player = getPlayer(id);
-            if (!player || player.health <= 0) return;
+            if (!isRunning() || !player || player.health <= 0) return;
 
             const now = Date.now();
             if (now - lastObstacleHitTime < OBSTACLE_DAMAGE.cooldown) return;
@@ -153,24 +155,18 @@ export function setupNetwork(io) {
                     victimDeaths: player.deaths,
                 });
 
-                // wie beim abschuss: nach kurzer zeit neu starten
-                respawnTimers[id] = setTimeout(() => {
-                    delete respawnTimers[id];
-                    const respawned = respawnPlayer(id);
-                    if (!respawned) return;
-                    io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: respawned.health });
-                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: id, x: respawned.x, y: respawned.y, angle: respawned.angle, health: respawned.health });
-                }, RESPAWN.delay);
+                // ausgeschieden bis zur nächsten runde (zuschauen übernimmt irgendeinen lebenden spieler)
+                player.alive = false;
+                checkRoundEnd();
             }
         });
 
         socket.on("disconnect", () => {
             console.log("user disconnected " + id);
-            clearTimeout(respawnTimers[id]);
-            delete respawnTimers[id];
             if (getPlayer(id)) {
                 socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
                 removePlayer(id);
+                checkRoundEnd();
             }
         });
     });

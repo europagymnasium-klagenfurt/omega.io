@@ -28,5 +28,8 @@ export const EVENTS = {
     REPAIR_RESPAWNED: "repairRespawned", // {index} kit ist wieder da
     REPAIR_REJECTED: "repairRejected", // {index} einsammeln war nicht gültig
     PLAYER_RESPAWNED: "playerRespawned", // {id, x, y, angle, health} zerstörtes auto ist wieder da
+    ROUND_STARTED: "roundStarted",   // {round, remaining} neue runde läuft, alle starten neu
+    ROUND_ENDED: "roundEnded",       // {winnerId, winnerName, winnerColor, reason, intermission} runde vorbei
+    ROUND_WAITING: "roundWaiting",   // zu wenig spieler für eine runde
     PLAYER_KILLED: "playerKilled",   // {killerId, killerName, killerColor, killerKills, victimId, victimName, victimColor, victimDeaths}
 };

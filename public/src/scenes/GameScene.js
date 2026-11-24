@@ -13,6 +13,8 @@ import { PlayerHud } from "../systems/PlayerHud.js";
 import { ExhaustSmoke } from "../systems/ExhaustSmoke.js";
 import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
+import { BrowserShortcutBlocker } from "../systems/BrowserShortcutBlocker.js";
+import { Mines } from "../systems/Mines.js";
 import { ObstacleField } from "../systems/ObstacleField.js";
 import { ObstacleDamage } from "../systems/ObstacleDamage.js";
 import { Minimap } from "../systems/Minimap.js";
@@ -168,6 +170,8 @@ export class GameScene extends Phaser.Scene {
         this.garageField = new GarageField(this, this.car, this.playerHealth, this.multiplayer, this.playerName);
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
+        this.mines = new Mines(this, this.playerHealth);
+        this.shortcutBlocker = new BrowserShortcutBlocker(this);
         this.obstacleDamage = new ObstacleDamage(this, this.car, this.obstacleField, this.playerHealth);
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
         this.scoreboard = new Scoreboard(this);
@@ -191,12 +195,14 @@ export class GameScene extends Phaser.Scene {
         this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
         this.garageField.update();
         this.machineGun.update(time);
+        this.mines.update(delta);
         this.playerHud.update(this.car.getSpeedKmh(), delta);
         this.multiplayer.sendState();
         this.minimap.update(time);
         this.scoreboard.update();
         this.respawn.update();
         this.roundHud.update();
+        this.spectator.update();
         this.repairKits.update(time);
     }
 

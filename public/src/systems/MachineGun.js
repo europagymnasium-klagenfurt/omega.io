@@ -4,7 +4,7 @@
 // der server zieht die lebenspunkte ab und schickt HEALTH_CHANGED an alle (siehe PlayerHealth).
 
 import { socket, EVENTS } from "../network.js";
-import { MACHINE_GUN } from "../config.js";
+import { MACHINE_GUN, getVehicleStats } from "../config.js";
 import { Bullet } from "../objects/Bullet.js";
 import { getWorldShape, shapeContains } from "./HitboxShapes.js";
 
@@ -33,7 +33,7 @@ export class MachineGun {
 
         const firing = this.scene.input.activePointer.leftButtonDown() && this.playerHealth.isAlive();
         if (!firing || time < this.nextShotTime) return;
-        this.nextShotTime = time + MACHINE_GUN.fireRate;
+        this.nextShotTime = time + MACHINE_GUN.fireRate * getVehicleStats(this.car.texture.key).fireRate;
 
         const angle = this.car.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
         const distance = this.car.displayHeight / 2 + MACHINE_GUN.muzzleOffset;

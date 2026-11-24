@@ -86,6 +86,29 @@ export const OBSTACLES = {
     ],
 };
 
+// garagen in der welt: einfahren = fahrzeug wechseln (leben bleiben gleich)
+export const GARAGES = {
+    width: 240,
+    height: 170,
+    enterRatio: 0.55,        // so weit muss das auto drin sein (anteil der garagengröße)
+    maxStay: 10000,          // ms: so lange darf man höchstens in der garage bleiben
+    cooldown: 60000,         // ms: so lange sind die garagen danach gesperrt
+    enterDelay: 250,         // ms überblendung, bevor das menü kommt
+    safeMargin: 120,         // abstand zu hindernissen
+    labelFontSize: 26,
+    labelColor: "#ffd27a",   // neon-schrift
+    labelGlow: 0xff9a2e,
+    labelGap: 26,            // abstand des schilds über dem dach
+    doorWidth: 170,
+    doorHeight: 18,
+    list: [
+        { name: "GARAGE NORDOST", x: 2100, y: 280 },
+        { name: "GARAGE WEST", x: 260, y: 800 },
+        { name: "GARAGE SÜDWEST", x: 650, y: 1360 },
+        { name: "GARAGE SÜDOST", x: 1850, y: 1330 },
+    ],
+};
+
 export const COLLISION_MESSAGE = {
     fontSize: 112,
     popScale: 1.25,

@@ -140,6 +140,12 @@ export const ARMOR = {
     "monster-face": 2,
 };
 
+// schaden, wenn das eigene auto gegen ein hindernis fährt (kleiner teil der lebenspunkte)
+export const OBSTACLE_DAMAGE = {
+    damage: 0.2,          // lebenspunkte pro aufprall (bei armor 1)
+    cooldown: 800,        // millisekunden, bis wieder schaden möglich ist (sonst zählt jeder frame)
+};
+
 export const HEALTH_BAR = {
     points: 5,                // maximale lebenspunkte
     width: 70,                // balken bei voller gesundheit

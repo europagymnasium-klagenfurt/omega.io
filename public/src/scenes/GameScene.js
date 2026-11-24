@@ -14,6 +14,7 @@ import { ExhaustSmoke } from "../systems/ExhaustSmoke.js";
 import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
 import { ObstacleField } from "../systems/ObstacleField.js";
+import { ObstacleDamage } from "../systems/ObstacleDamage.js";
 import { Minimap } from "../systems/Minimap.js";
 import { Scoreboard } from "../systems/Scoreboard.js";
 import { KillFeed } from "../systems/KillFeed.js";
@@ -162,6 +163,7 @@ export class GameScene extends Phaser.Scene {
         this.garageField = new GarageField(this, this.car, this.playerHealth, this.multiplayer, this.playerName);
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
+        this.obstacleDamage = new ObstacleDamage(this, this.car, this.obstacleField, this.playerHealth);
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
         this.scoreboard = new Scoreboard(this);
         this.killFeed = new KillFeed(this);

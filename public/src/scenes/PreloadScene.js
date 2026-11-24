@@ -2,7 +2,7 @@
 // neue assets hier laden, damit sie in jeder scene verfügbar sind.
 
 import { ALL_VEHICLES } from "/shared/vehicles.js";
-import { SPEED_BOOST, MACHINE_GUN, OBSTACLES } from "../config.js";
+import { SPEED_BOOST, MACHINE_GUN, OBSTACLES, ROCKET } from "../config.js";
 
 export class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -50,6 +50,16 @@ export class PreloadScene extends Phaser.Scene {
         bulletGraphics.fillCircle(bulletSize / 2, bulletSize / 2, bulletSize / 2);
         bulletGraphics.generateTexture("bullet", bulletSize, bulletSize);
         bulletGraphics.destroy();
+
+        // raketen-symbol: spitze mit flamme. wird für das pickup, das inventar UND das fliegende projektil benutzt.
+        const rocketSize = 32;
+        const rocketGraphics = this.make.graphics({}, false);
+        rocketGraphics.fillStyle(ROCKET.iconColor, 1);
+        rocketGraphics.fillTriangle(rocketSize / 2, 0, rocketSize, rocketSize * 0.75, 0, rocketSize * 0.75);
+        rocketGraphics.fillStyle(ROCKET.flameColor, 1);
+        rocketGraphics.fillTriangle(rocketSize / 2, rocketSize * 0.55, rocketSize * 0.74, rocketSize, rocketSize * 0.26, rocketSize);
+        rocketGraphics.generateTexture("rocket", rocketSize, rocketSize);
+        rocketGraphics.destroy();
 
         this.scene.start("MenuScene");
     }

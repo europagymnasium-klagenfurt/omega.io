@@ -1,12 +1,42 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, RESPAWN } from "../public/src/config.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, damagePlayerFlat, recordKill, respawnPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, ROCKET, RESPAWN } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
+// ein eintrag pro ROCKET.pickupPositions: ob es grade eingesammelt ist und der respawn-timer dafür
+const rocketPickups = ROCKET.pickupPositions.map(() => ({ claimed: false, timer: null }));
 const respawnTimers = {};   // spieler-id -> timer bis zum neustart nach dem tod
+
+// schaden wurde bereits abgezogen: lebenspunkte verteilen, bei "tot" den kill verbuchen und später respawnen.
+// von HIT (maschinengewehr) und ROCKET_HIT gemeinsam genutzt, damit die logik nicht doppelt existiert.
+function handleDamageResult(io, shooterId, target) {
+    io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
+    if (target.health > 0) return;
+
+    const { killer, victim } = recordKill(shooterId, target.id);
+    io.emit(EVENTS.PLAYER_KILLED, {
+        killerId: killer.id,
+        killerName: killer.name,
+        killerColor: killer.color,
+        killerKills: killer.kills,
+        victimId: victim.id,
+        victimName: victim.name,
+        victimColor: victim.color,
+        victimDeaths: victim.deaths,
+    });
+
+    // nach kurzer zeit neu starten (wenn der spieler dann noch da ist)
+    respawnTimers[target.id] = setTimeout(() => {
+        delete respawnTimers[target.id];
+        const player = respawnPlayer(target.id);
+        if (!player) return;
+        io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
+        io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
+    }, RESPAWN.delay);
+}
 
 export function setupNetwork(io) {
     io.on("connection", (socket) => {
@@ -21,6 +51,9 @@ export function setupNetwork(io) {
                 id: id,
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
+                rocketPickupsTaken: rocketPickups
+                    .map((pickup, index) => (pickup.claimed ? index : null))
+                    .filter((index) => index !== null),
             });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
         });
@@ -74,31 +107,57 @@ export function setupNetwork(io) {
 
             lastHitTime = now;
             damagePlayer(target.id, MACHINE_GUN.damage);
-            io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
+            handleDamageResult(io, shooter.id, target);
+        });
 
-            // keine lebenspunkte mehr: abschuss verbuchen und allen melden
-            if (target.health <= 0) {
-                const { killer, victim } = recordKill(shooter.id, target.id);
-                io.emit(EVENTS.PLAYER_KILLED, {
-                    killerId: killer.id,
-                    killerName: killer.name,
-                    killerColor: killer.color,
-                    killerKills: killer.kills,
-                    victimId: victim.id,
-                    victimName: victim.name,
-                    victimColor: victim.color,
-                    victimDeaths: victim.deaths,
-                });
-
-                // nach kurzer zeit neu starten (wenn der spieler dann noch da ist)
-                respawnTimers[target.id] = setTimeout(() => {
-                    delete respawnTimers[target.id];
-                    const player = respawnPlayer(target.id);
-                    if (!player) return;
-                    io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
-                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
-                }, RESPAWN.delay);
+        // raketen-item einsammeln: nur möglich, wenn es gerade verfügbar und man nahe genug dran ist
+        socket.on(EVENTS.ROCKET_PICKUP, (data = {}) => {
+            const pickupId = data.pickupId;
+            const pickup = rocketPickups[pickupId];
+            const position = ROCKET.pickupPositions[pickupId];
+            if (!pickup || !position || pickup.claimed) {
+                socket.emit(EVENTS.ROCKET_PICKUP_REJECTED, { pickupId });
+                return;
             }
+
+            const player = getPlayer(id);
+            if (!player || Math.hypot(player.x - position.x, player.y - position.y) > ROCKET.pickupRadius) {
+                socket.emit(EVENTS.ROCKET_PICKUP_REJECTED, { pickupId });
+                return;
+            }
+
+            pickup.claimed = true;
+            io.emit(EVENTS.ROCKET_PICKUP_TAKEN, { pickupId });
+            socket.emit(EVENTS.ROCKET_GRANTED);
+            pickup.timer = setTimeout(() => {
+                pickup.claimed = false;
+                pickup.timer = null;
+                io.emit(EVENTS.ROCKET_PICKUP_RESPAWNED, { pickupId });
+            }, ROCKET.respawnDelay);
+        });
+
+        // raketenabschuss an alle anderen weitergeben, damit sie die rakete mitverfolgen können
+        socket.on(EVENTS.ROCKET_FIRE, (data = {}) => {
+            if (!getPlayer(id)) return;
+            socket.broadcast.emit(EVENTS.ROCKET_FIRED, { id, x: data.x, y: data.y, angle: data.angle, targetId: data.targetId });
+        });
+
+        // raketentreffer prüfen: zieht 25% der maximalen lebenspunkte ab (siehe damagePlayerFlat)
+        let lastRocketHitTime = 0;
+        socket.on(EVENTS.ROCKET_HIT, (data = {}) => {
+            const shooter = getPlayer(id);
+            const target = getPlayer(data.targetId);
+            if (!shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
+
+            const now = Date.now();
+            if (now - lastRocketHitTime < 300) return;   // raketen treffen nicht mehrfach pro bruchteil einer sekunde
+
+            const distance = Math.hypot(shooter.x - target.x, shooter.y - target.y);
+            if (distance > ROCKET.lockRange + ROCKET.hitTolerance) return;
+
+            lastRocketHitTime = now;
+            damagePlayerFlat(target.id, ROCKET.damageFraction);
+            handleDamageResult(io, shooter.id, target);
         });
 
         socket.on("disconnect", () => {

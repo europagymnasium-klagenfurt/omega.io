@@ -48,6 +48,17 @@ export function damagePlayer(id, damage) {
     return player;
 }
 
+// raketentreffer: zieht einen festen anteil der MAXIMALEN lebenspunkte ab, unabhängig von der panzerung
+// (raketen sind explosiv und ignorieren deshalb absichtlich ARMOR, anders als damagePlayer())
+export function damagePlayerFlat(id, fraction) {
+    const player = players[id];
+    if (!player) return null;
+
+    const health = player.health - HEALTH_BAR.points * fraction;
+    player.health = Math.max(0, Math.round(health * 1000) / 1000);
+    return player;
+}
+
 // abschuss verbuchen: der schütze bekommt einen kill, das opfer einen tod
 export function recordKill(killerId, victimId) {
     const killer = players[killerId];

@@ -2,10 +2,10 @@
 // die statische karte (hintergrund, raster, hindernisse) wird einmal gezeichnet,
 // nur spieler und boost werden jeden frame neu gezeichnet. mit der taste M ein- und ausblenden.
 
-import { MINIMAP, SPEED_BOOST, VIEW_WIDTH, VIEW_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
+import { MINIMAP, SPEED_BOOST, GARAGES, VIEW_WIDTH, VIEW_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 
 export class Minimap {
-    constructor(scene, car, multiplayer, playerHud, obstacleField, speedBoost) {
+    constructor(scene, car, multiplayer, playerHud, obstacleField, speedBoost, garageField) {
         this.scene = scene;
         this.car = car;
         this.multiplayer = multiplayer;
@@ -28,7 +28,7 @@ export class Minimap {
             fontStyle: "bold",
         }).setScrollFactor(0).setDepth(MINIMAP.depth + 1).setAlpha(0.8);
 
-        this.drawBase(obstacleField);
+        this.drawBase(obstacleField, garageField);
 
         this.visible = true;
         this.toggleKey = scene.input.keyboard.addKey(MINIMAP.toggleKey);
@@ -41,7 +41,7 @@ export class Minimap {
         return value * this.scale;
     }
 
-    drawBase(obstacleField) {
+    drawBase(obstacleField, garageField) {
         const g = this.base;
         g.clear();
 
@@ -63,6 +63,20 @@ export class Minimap {
             const w = Math.max(2, this.toMap(obstacle.displayWidth));
             const h = Math.max(2, this.toMap(obstacle.displayHeight));
             g.fillRect(this.toMap(obstacle.x) - w / 2, this.toMap(obstacle.y) - h / 2, w, h);
+        }
+
+        // garagen (stehen auch fest, mit eigener farbe und rand von den hindernissen unterscheidbar)
+        if (garageField) {
+            const w = Math.max(4, this.toMap(GARAGES.width));
+            const h = Math.max(4, this.toMap(GARAGES.height));
+            for (const garage of garageField.garages) {
+                const gx = this.toMap(garage.x) - w / 2;
+                const gy = this.toMap(garage.y) - h / 2;
+                g.fillStyle(MINIMAP.garageColor, MINIMAP.garageAlpha);
+                g.fillRect(gx, gy, w, h);
+                g.lineStyle(1, MINIMAP.garageBorderColor, 1);
+                g.strokeRect(gx, gy, w, h);
+            }
         }
 
         g.lineStyle(2, MINIMAP.borderColor, 0.9);

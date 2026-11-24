@@ -12,12 +12,26 @@ export const CAR = {
     rotationSpeed: 150,   // grad pro sekunde
     turnBoostMultiplier: 2, // wenn SHIFT gedrückt ist, wird die drehung vervielfacht
     speed: 600,           // pixel pro sekunde
+    accelerationTime: 1500, // millisekunden bis von 0 auf maximale geschwindigkeit
     shiftSpeedMultiplier: 0.7, // mit SHIFT: 30% langsamer
     glide: 0.965,         // normale gleitdistanz leicht erhöht
     glideShift: 0.97,     // mit SHIFT: gleitdistanz noch länger, aber nicht mehr so extrem
     scale: 0.5,
     referenceSize: 235,   // längste seite des bisherigen autos
     hitbox: { widthRatio: 0.78 },
+};
+
+export const SKID_MARKS = {
+    brakeSpeedThreshold: 150,  // mind. diese fahrgeschwindigkeit, damit bremsen eine spur hinterlässt
+    turnSpeedThreshold: 260,   // mind. diese geschwindigkeit, damit eine kurve als "stark" gilt
+    pointMinDistance: 10,      // neuer punkt erst nach dieser distanz zum letzten
+    maxPoints: 4000,           // älteste punkte werden verworfen, wenn mehr davon da sind (bleiben sonst für immer)
+    width: 7,
+    color: 0x111111,
+    alpha: 0.38,
+    rearOffset: 58,            // abstand der hinterräder von der fahrzeugmitte
+    wheelSpread: 16,           // abstand der beiden reifenspuren voneinander
+    depth: 3,
 };
 
 export const SPAWN_INTRO = {
@@ -131,6 +145,45 @@ export const MACHINE_GUN = {
     hitTolerance: 150,    // server: treffer gilt nur, wenn ziel höchstens range + das entfernt ist
 };
 
+// raketen-items auf der karte: einsammeln füllt das inventar (slot unten links, taste 1 zum abschießen).
+// jedes pickup respawnt unabhängig von den anderen, genau wie SPEED_BOOST, nur mehrfach.
+export const ROCKET = {
+    pickupPositions: [
+        { x: 1100, y: 900 },
+        { x: 2500, y: 700 },
+        { x: 1800, y: 1900 },
+        { x: 3100, y: 1600 },
+    ],
+    pickupSize: 56,
+    pickupRadius: 70,
+    respawnDelay: 25000,     // ms bis ein eingesammeltes item wieder auftaucht
+    retryDelay: 250,
+    maxAmmo: 3,              // mehr passt nicht ins inventar
+    fireKey: "ONE",          // taste 1 zum abschießen
+    speed: 420,              // pixel pro sekunde
+    turnRate: 200,           // grad pro sekunde, wie schnell sie zum ziel einlenkt
+    lockRange: 1000,         // weiter entfernte autos werden nicht als ziel gewählt
+    lifespan: 4000,          // ms bis sie ohne treffer verschwindet
+    damageFraction: 0.25,    // 25% der maximalen lebenspunkte pro treffer, unabhängig von der panzerung
+    hitTolerance: 120,       // server: grobe plausibilitätsprüfung der entfernung
+    muzzleOffset: 10,
+    iconColor: 0xff6a3d,
+    flameColor: 0xffd27a,
+};
+
+export const ROCKET_HUD = {
+    x: 16,                   // abstand zum linken rand
+    margin: 16,               // abstand zum unteren rand
+    size: 56,
+    depth: 150,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.88,
+    borderColor: 0xff6a3d,
+    emptyAlpha: 0.35,
+    keyFontSize: 12,
+    countFontSize: 16,
+};
+
 // panzerung pro fahrzeug: abgezogen wird damage / armor.
 // armor 2 = halber schaden = hält doppelt so viel aus. fahrzeuge ohne eintrag haben "default".
 export const ARMOR = {
@@ -204,6 +257,9 @@ export const MINIMAP = {
     obstacleAlpha: 0.9,
     viewColor: 0xffffff,        // rahmen, der den sichtbaren ausschnitt zeigt
     viewAlpha: 0.35,
+    garageColor: 0x7dff8a,
+    garageAlpha: 0.55,
+    garageBorderColor: 0xffd27a,
     boostColor: 0xffd166,
     boostRadius: 5,
     remoteDotRadius: 3.5,

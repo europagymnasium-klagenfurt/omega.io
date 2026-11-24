@@ -1,5 +1,5 @@
 
-import { GARAGES, OBSTACLES, SPEED_BOOST, WORLD_HEIGHT, WORLD_WIDTH } from "../config.js";
+import { GARAGES, OBSTACLES, ROCKET, SPEED_BOOST, WORLD_HEIGHT, WORLD_WIDTH } from "../config.js";
 
 export class ObstacleField {
     constructor(scene, car) {
@@ -89,6 +89,13 @@ export class ObstacleField {
         // garagen und ihre einfahrt freihalten
         for (const garage of GARAGES.list) {
             if (Math.hypot(x - garage.x, y - garage.y) < GARAGES.width / 2 + GARAGES.safeMargin + radius) {
+                return false;
+            }
+        }
+
+        // raketen-pickups freihalten
+        for (const position of ROCKET.pickupPositions) {
+            if (Math.hypot(x - position.x, y - position.y) < ROCKET.pickupRadius + radius) {
                 return false;
             }
         }

@@ -18,6 +18,7 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         const offsetY = (this.height - radius * 2) / 2;
         this.setCircle(radius, offsetX, offsetY);
         this.speedMultiplier = 1;
+        this.currentSpeed = 0;   // aktuelle fahrgeschwindigkeit, steigt über CAR.accelerationTime auf das maximum
         this.healthBar = new HealthBar(scene, this);
     }
 
@@ -33,7 +34,7 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
 
     // wird jeden frame von der scene aufgerufen.
     // links und rechts rotieren die grafik, die hitbox bleibt axis-aligned.
-    drive(cursors, shiftKey) {
+    drive(cursors, shiftKey, delta) {
         const turnSpeed = shiftKey && shiftKey.isDown
             ? CAR.rotationSpeed * CAR.turnBoostMultiplier
             : CAR.rotationSpeed;
@@ -54,15 +55,19 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         }
 
         const angle = this.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
-        const speed = CAR.speed * this.speedMultiplier;
+        const maxSpeed = CAR.speed * this.speedMultiplier;
+        const accelStep = (maxSpeed / CAR.accelerationTime) * delta;   // steigerung pro frame, damit 0 -> maximum CAR.accelerationTime ms dauert
 
         if (cursors.up.isDown) {
-            this.scene.physics.velocityFromRotation(angle, speed, this.body.velocity);
+            this.currentSpeed = Math.min(this.currentSpeed + accelStep, maxSpeed);
+            this.scene.physics.velocityFromRotation(angle, this.currentSpeed, this.body.velocity);
         } else if (cursors.down.isDown) {
-            this.scene.physics.velocityFromRotation(angle, -speed, this.body.velocity);
+            this.currentSpeed = Math.max(this.currentSpeed - accelStep, -maxSpeed);
+            this.scene.physics.velocityFromRotation(angle, this.currentSpeed, this.body.velocity);
         } else {
             const glideFactor = shiftKey && shiftKey.isDown ? CAR.glideShift : CAR.glide;
             this.body.velocity.scale(glideFactor);   // geschwindigkeit verringern: normal kürzer, mit SHIFT deutlich länger
+            this.currentSpeed *= glideFactor;         // damit das nächste gasgeben wieder sanft startet
         }
     }
 

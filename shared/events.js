@@ -10,6 +10,9 @@ export const EVENTS = {
     BOOST_PICKUP: "boostPickup",      // client möchte das speed-item einsammeln
     SHOOT: "shoot",                  // eigener schuss {x, y, vx, vy}
     HIT: "hit",                      // eigener schuss hat ein anderes auto getroffen {targetId}
+    ROCKET_PICKUP: "rocketPickup",   // client möchte ein raketen-item einsammeln {pickupId}
+    ROCKET_FIRE: "rocketFire",       // eigene rakete abgeschossen {x, y, angle, targetId}
+    ROCKET_HIT: "rocketHit",         // eigene rakete hat ein anderes auto getroffen {targetId}
 
     // server -> client
     INIT: "init",                    // {id, players} an den neuen spieler
@@ -24,4 +27,9 @@ export const EVENTS = {
     HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
     PLAYER_RESPAWNED: "playerRespawned", // {id, x, y, angle, health} zerstörtes auto ist wieder da
     PLAYER_KILLED: "playerKilled",   // {killerId, killerName, killerColor, killerKills, victimId, victimName, victimColor, victimDeaths}
+    ROCKET_PICKUP_TAKEN: "rocketPickupTaken",         // {pickupId} item wurde eingesammelt
+    ROCKET_PICKUP_RESPAWNED: "rocketPickupRespawned", // {pickupId} item ist wieder verfügbar
+    ROCKET_PICKUP_REJECTED: "rocketPickupRejected",   // {pickupId} einsammeln war nicht gültig
+    ROCKET_GRANTED: "rocketGranted", // rakete nur für den sammler ins inventar
+    ROCKET_FIRED: "rocketFired",     // {id, x, y, angle, targetId} abschuss eines anderen spielers
 };

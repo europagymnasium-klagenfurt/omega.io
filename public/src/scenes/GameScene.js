@@ -18,6 +18,9 @@ import { Minimap } from "../systems/Minimap.js";
 import { Scoreboard } from "../systems/Scoreboard.js";
 import { KillFeed } from "../systems/KillFeed.js";
 import { Respawn } from "../systems/Respawn.js";
+import { SkidMarks } from "../systems/SkidMarks.js";
+import { RocketPickupField } from "../systems/RocketPickupField.js";
+import { RocketLauncher } from "../systems/RocketLauncher.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -158,12 +161,15 @@ export class GameScene extends Phaser.Scene {
         this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud, this.playerName);
         this.playerHealth = new PlayerHealth(this, this.car, this.multiplayer);
         this.garageField = new GarageField(this, this.car, this.playerHealth, this.multiplayer, this.playerName);
-        this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
+        this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth, this.obstacleField);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
-        this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
+        this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost, this.garageField);
         this.scoreboard = new Scoreboard(this);
         this.killFeed = new KillFeed(this);
         this.respawn = new Respawn(this, this.car, this.multiplayer);
+        this.skidMarks = new SkidMarks(this, this.car);
+        this.rocketPickupField = new RocketPickupField(this, this.car);
+        this.rocketLauncher = new RocketLauncher(this, this.car, this.multiplayer, this.playerHealth, this.rocketPickupField, this.obstacleField);
     }
 
     update(time, delta) {
@@ -174,7 +180,7 @@ export class GameScene extends Phaser.Scene {
 
         const movementInput = this.getMovementInput();
         const isAlive = this.playerHealth.isAlive();
-        if (isAlive) this.car.drive(movementInput, this.shiftKey);
+        if (isAlive) this.car.drive(movementInput, this.shiftKey, delta);
         this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
         this.garageField.update();
         this.machineGun.update(time);
@@ -183,6 +189,8 @@ export class GameScene extends Phaser.Scene {
         this.minimap.update(time);
         this.scoreboard.update();
         this.respawn.update();
+        this.skidMarks.update(movementInput, isAlive);
+        this.rocketLauncher.update(delta);
     }
 
     getMovementInput() {

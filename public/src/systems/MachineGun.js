@@ -8,13 +8,19 @@ import { MACHINE_GUN } from "../config.js";
 import { Bullet } from "../objects/Bullet.js";
 
 export class MachineGun {
-    constructor(scene, car, multiplayer, playerHealth) {
+    constructor(scene, car, multiplayer, playerHealth, obstacleField) {
         this.scene = scene;
         this.car = car;
         this.multiplayer = multiplayer;
         this.playerHealth = playerHealth;
         this.nextShotTime = 0;
         this.bullets = scene.physics.add.group();   // alle schüsse (eigene und fremde)
+
+        // schüsse bleiben an hindernissen stecken, statt durchzufliegen
+        this.obstacleCollider = scene.physics.add.collider(this.bullets, obstacleField.group, (a, b) => {
+            const bullet = a instanceof Bullet ? a : b;
+            bullet.destroy();
+        });
 
         this.handlers = {
             [EVENTS.SHOT_FIRED]: (data) => this.spawnBullet(data.x, data.y, data.vx, data.vy, data.id),
@@ -76,5 +82,6 @@ export class MachineGun {
         for (const [event, handler] of Object.entries(this.handlers)) {
             socket.off(event, handler);
         }
+        this.obstacleCollider.destroy();
     }
 }

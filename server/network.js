@@ -1,7 +1,7 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer } from "./players.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill } from "./players.js";
 import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
@@ -74,6 +74,21 @@ export function setupNetwork(io) {
             lastHitTime = now;
             damagePlayer(target.id, MACHINE_GUN.damage);
             io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
+
+            // keine lebenspunkte mehr: abschuss verbuchen und allen melden
+            if (target.health <= 0) {
+                const { killer, victim } = recordKill(shooter.id, target.id);
+                io.emit(EVENTS.PLAYER_KILLED, {
+                    killerId: killer.id,
+                    killerName: killer.name,
+                    killerColor: killer.color,
+                    killerKills: killer.kills,
+                    victimId: victim.id,
+                    victimName: victim.name,
+                    victimColor: victim.color,
+                    victimDeaths: victim.deaths,
+                });
+            }
         });
 
         socket.on("disconnect", () => {

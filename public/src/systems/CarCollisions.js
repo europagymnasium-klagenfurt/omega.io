@@ -1,27 +1,30 @@
+import { pushCarOut } from "./HitboxShapes.js";
+
+// eigenes auto gegen die autos der anderen spieler. die umrisse der autos (siehe HitboxShapes) schieben sich weg.
 export class CarCollisions {
     constructor(scene, localCar, collisionMessage) {
         this.scene = scene;
         this.localCar = localCar;
         this.collisionMessage = collisionMessage;
-        this.colliders = new Map();
+        this.remoteCars = new Map();
+        scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.update, this);
     }
 
     addRemoteCar(remoteCar) {
-        const collider = this.scene.physics.add.collider(this.localCar, remoteCar, () => {
-            this.collisionMessage.show();
-        });
-        this.colliders.set(remoteCar.playerId, collider);
+        this.remoteCars.set(remoteCar.playerId, remoteCar);
     }
 
     removeRemoteCar(playerId) {
-        this.colliders.get(playerId)?.destroy();
-        this.colliders.delete(playerId);
+        this.remoteCars.delete(playerId);
+    }
+
+    // nach jedem physik-schritt: aus berührten autos herausschieben
+    update() {
+        if (pushCarOut(this.localCar, this.remoteCars.values())) this.collisionMessage.show();
     }
 
     destroy() {
-        for (const collider of this.colliders.values()) {
-            collider.destroy();
-        }
-        this.colliders.clear();
+        this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.update, this);
+        this.remoteCars.clear();
     }
 }

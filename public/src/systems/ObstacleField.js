@@ -1,5 +1,6 @@
 
 import { OBSTACLES, SPEED_BOOST, WORLD_HEIGHT, WORLD_WIDTH } from "../config.js";
+import { pushCarOut } from "./HitboxShapes.js";
 
 export class ObstacleField {
     constructor(scene, car) {
@@ -7,7 +8,13 @@ export class ObstacleField {
         this.randomState = OBSTACLES.seed;
         this.group = scene.physics.add.staticGroup();
         this.placeObstacles();
-        this.collider = scene.physics.add.collider(car, this.group);
+
+        // die umrisse der hindernisse schieben das auto weg (statt arcade-collider)
+        this.car = car;
+        scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.collide, this);
+        scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.collide, this);
+        });
     }
 
     placeObstacles() {
@@ -29,17 +36,14 @@ export class ObstacleField {
                 // Physik-Body aktualisieren
                 obstacle.refreshBody();
 
-                // Hitbox auf 70 % verkleinern
-                obstacle.body.setSize(
-                    type.bodyWidth * 0.7,
-                    type.bodyHeight * 0.7,
-                    true
-                );
-
                 obstacle.obstacleRadius = radius;
                 break;
             }
         }
+    }
+
+    collide() {
+        pushCarOut(this.car, this.group.getChildren());
     }
 
     isClear(x, y, radius) {

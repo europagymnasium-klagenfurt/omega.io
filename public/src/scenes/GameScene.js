@@ -15,6 +15,7 @@ import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
 import { ObstacleField } from "../systems/ObstacleField.js";
 import { Minimap } from "../systems/Minimap.js";
+import { HitboxDebug } from "../systems/HitboxDebug.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -27,6 +28,7 @@ export class GameScene extends Phaser.Scene {
 
         this.car = new PlayerCar(this, 400, 300, data?.vehicleKey);
         this.obstacleField = new ObstacleField(this, this.car);
+        this.hitboxDebug = new HitboxDebug(this);
         this.playerName = data?.playerName || "";
         this.vehicleChangeUsed = Boolean(data?.vehicleChangeUsed);
         this.car.setVisible(false);

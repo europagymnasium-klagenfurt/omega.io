@@ -3,6 +3,7 @@
 import { socket, EVENTS } from "../network.js";
 import { SPEED_BOOST, VIEW_WIDTH } from "../config.js";
 import { BoostPickup } from "../objects/BoostPickup.js";
+import { spritesOverlap } from "./HitboxShapes.js";
 
 export class SpeedBoost {
     constructor(scene, car) {
@@ -25,7 +26,11 @@ export class SpeedBoost {
             socket.on(event, handler);
         }
 
-        this.overlap = scene.physics.add.overlap(car, this.pickup, () => this.requestPickup());
+        // eingesammelt, wenn sich die umrisse von auto und item berühren
+        this.checkPickup = () => {
+            if (this.pickup.visible && spritesOverlap(car, this.pickup)) this.requestPickup();
+        };
+        scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.checkPickup);
         scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
     }
 
@@ -96,7 +101,7 @@ export class SpeedBoost {
         for (const [event, handler] of Object.entries(this.handlers)) {
             socket.off(event, handler);
         }
-        this.overlap.destroy();
+        this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.checkPickup);
         this.retryTimer?.remove(false);
         this.pickup.destroy();
     }

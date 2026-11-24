@@ -5,7 +5,22 @@ export const VIEW_HEIGHT = 800;
 export const WORLD_WIDTH = VIEW_WIDTH * 2;
 export const WORLD_HEIGHT = VIEW_HEIGHT * 2;
 
-export const DEBUG = false;  // zeigt die hitboxen an
+export const DEBUG = false;  // zeigt die hitboxen von anfang an (im spiel mit der taste unten umschaltbar)
+
+// hitboxen folgen der umrisslinie der bilder (siehe systems/HitboxShapes.js)
+export const HITBOX = {
+    toggleKey: "H",          // taste zum ein- und ausblenden der hitboxen
+    alphaThreshold: 64,      // ab diesem alpha-wert (0-255) zählt ein bildpunkt als sichtbar
+    maskResolution: 400,     // so viele zellen (längste bildseite) werden für den umriss ausgewertet
+    tolerance: 0.7,          // wie stark der umriss vereinfacht wird (welt-pixel)
+    pointSpacing: 4,         // höchstens so viele welt-pixel zwischen zwei umriss-punkten
+    minPartArea: 0.01,       // kleine einzelteile unter diesem anteil der größten fläche werden ignoriert
+    minDepth: 0.05,          // berührungen unter dieser tiefe (welt-pixel) zählen nicht (nur kante an kante)
+    maxPush: 40,             // so weit wird ein auto pro frame höchstens aus einer berührung geschoben
+    debugDepth: 2000,
+    debugLineWidth: 2,
+    colors: { car: 0xff00ff, remoteCar: 0xff8800, obstacle: 0x00b4ff, pickup: 0x00ff66 },
+};
 
 export const CAR = {
     rotationSpeed: 150,   // grad pro sekunde
@@ -78,11 +93,11 @@ export const OBSTACLES = {
     spawn: { x: 400, y: 300, spacing: 100, count: 8, safeRadius: 150 },
     boostSafeRadius: 180,
     types: [
-        { key: "obstacle-tire", asset: "tires.png", width: 142, height: 142, bodyWidth: 132, bodyHeight: 132, weight: 5 },
-        { key: "obstacle-rubble", asset: "house.png", width: 150, height: 150, bodyWidth: 140, bodyHeight: 140, weight: 4 },
-        { key: "obstacle-wreck", asset: "brokencar.png", width: 132, height: 132, bodyWidth: 66, bodyHeight: 124, weight: 3 },
-        { key: "obstacle-wall", asset: "wall.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
-        { key: "obstacle-wall-top", asset: "wall from above.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
+        { key: "obstacle-tire", asset: "tires.png", width: 142, height: 142, weight: 5 },
+        { key: "obstacle-rubble", asset: "house.png", width: 150, height: 150, weight: 4 },
+        { key: "obstacle-wreck", asset: "brokencar.png", width: 132, height: 132, weight: 3 },
+        { key: "obstacle-wall", asset: "wall.png", width: 260, height: 108, weight: 2 },
+        { key: "obstacle-wall-top", asset: "wall from above.png", width: 260, height: 108, weight: 2 },
     ],
 };
 

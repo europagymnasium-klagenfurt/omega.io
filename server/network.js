@@ -2,7 +2,7 @@
 
 import { EVENTS } from "../shared/events.js";
 import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, RESPAWN } from "../public/src/config.js";
+import { SPEED_BOOST, MACHINE_GUN, RESPAWN, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
@@ -97,6 +97,44 @@ export function setupNetwork(io) {
                     if (!player) return;
                     io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
                     io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
+                }, RESPAWN.delay);
+            }
+        });
+
+        // aufprall gegen ein hindernis: schaden mit abklingzeit, damit nicht jeder frame zählt
+        let lastObstacleHitTime = 0;
+        socket.on(EVENTS.OBSTACLE_HIT, () => {
+            const player = getPlayer(id);
+            if (!player || player.health <= 0) return;
+
+            const now = Date.now();
+            if (now - lastObstacleHitTime < OBSTACLE_DAMAGE.cooldown) return;
+
+            lastObstacleHitTime = now;
+            damagePlayer(id, OBSTACLE_DAMAGE.damage);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+
+            // am hindernis zerstört: als tod zählen (ohne gegner), im killfeed steht der name dann zweimal
+            if (player.health <= 0) {
+                player.deaths += 1;
+                io.emit(EVENTS.PLAYER_KILLED, {
+                    killerId: id,
+                    killerName: player.name,
+                    killerColor: player.color,
+                    killerKills: player.kills,
+                    victimId: id,
+                    victimName: player.name,
+                    victimColor: player.color,
+                    victimDeaths: player.deaths,
+                });
+
+                // wie beim abschuss: nach kurzer zeit neu starten
+                respawnTimers[id] = setTimeout(() => {
+                    delete respawnTimers[id];
+                    const respawned = respawnPlayer(id);
+                    if (!respawned) return;
+                    io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: respawned.health });
+                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: id, x: respawned.x, y: respawned.y, angle: respawned.angle, health: respawned.health });
                 }, RESPAWN.delay);
             }
         });

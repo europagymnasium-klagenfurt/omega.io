@@ -2,8 +2,9 @@
 
 export const VIEW_WIDTH = 1200;
 export const VIEW_HEIGHT = 800;
-export const WORLD_WIDTH = VIEW_WIDTH * 2;
-export const WORLD_HEIGHT = VIEW_HEIGHT * 2;
+export const WORLD_SIZE_FACTOR = 3;   // wie viele bildschirme breit/hoch die welt ist
+export const WORLD_WIDTH = VIEW_WIDTH * WORLD_SIZE_FACTOR;
+export const WORLD_HEIGHT = VIEW_HEIGHT * WORLD_SIZE_FACTOR;
 
 export const DEBUG = false;  // zeigt die hitboxen an
 
@@ -71,7 +72,9 @@ export const SPEED_BOOST = {
 
 export const OBSTACLES = {
     seed: 482731,
-    count: 20,
+    count: 40,              // so viele hindernisse (höchstens gridColumns * gridRows)
+    gridColumns: 8,         // die welt wird in felder geteilt, pro feld höchstens ein hindernis
+    gridRows: 6,
     attemptsPerObstacle: 80,
     edgeMargin: 140,
     spacing: 80,

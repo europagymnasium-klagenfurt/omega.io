@@ -9,6 +9,7 @@ export const EVENTS = {
     UPDATE: "update",                // eigene position {x, y, angle}
     BOOST_PICKUP: "boostPickup",      // client möchte das speed-item einsammeln
     SHOOT: "shoot",                  // eigener schuss {x, y, vx, vy}
+    REPAIR_PICKUP: "repairPickup",    // client möchte ein reparatur-kit einsammeln {index}
     HIT: "hit",                      // eigener schuss hat ein anderes auto getroffen {targetId}
 
     // server -> client
@@ -22,6 +23,9 @@ export const EVENTS = {
     BOOST_GRANTED: "boostGranted",   // speed-boost nur für den sammler
     SHOT_FIRED: "shotFired",         // {id, x, y, vx, vy} schuss eines anderen spielers
     HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
+    REPAIR_TAKEN: "repairTaken",     // {index} kit wurde eingesammelt
+    REPAIR_RESPAWNED: "repairRespawned", // {index} kit ist wieder da
+    REPAIR_REJECTED: "repairRejected", // {index} einsammeln war nicht gültig
     PLAYER_RESPAWNED: "playerRespawned", // {id, x, y, angle, health} zerstörtes auto ist wieder da
     PLAYER_KILLED: "playerKilled",   // {killerId, killerName, killerColor, killerKills, victimId, victimName, victimColor, victimDeaths}
 };

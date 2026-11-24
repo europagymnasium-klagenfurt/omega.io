@@ -1,11 +1,12 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, RESPAWN } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
+const respawnTimers = {};   // spieler-id -> timer bis zum neustart nach dem tod
 
 export function setupNetwork(io) {
     io.on("connection", (socket) => {
@@ -61,7 +62,7 @@ export function setupNetwork(io) {
         socket.on(EVENTS.HIT, (data = {}) => {
             const shooter = getPlayer(id);
             const target = getPlayer(data.targetId);
-            if (!shooter || !target || target.id === id || target.health <= 0) return;
+            if (!shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
 
             // nicht öfter treffen als geschossen werden kann
             const now = Date.now();
@@ -88,11 +89,22 @@ export function setupNetwork(io) {
                     victimColor: victim.color,
                     victimDeaths: victim.deaths,
                 });
+
+                // nach kurzer zeit neu starten (wenn der spieler dann noch da ist)
+                respawnTimers[target.id] = setTimeout(() => {
+                    delete respawnTimers[target.id];
+                    const player = respawnPlayer(target.id);
+                    if (!player) return;
+                    io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
+                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
+                }, RESPAWN.delay);
             }
         });
 
         socket.on("disconnect", () => {
             console.log("user disconnected " + id);
+            clearTimeout(respawnTimers[id]);
+            delete respawnTimers[id];
             if (getPlayer(id)) {
                 socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
                 removePlayer(id);

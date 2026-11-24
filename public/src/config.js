@@ -216,3 +216,10 @@ export const KILLFEED = {
     backgroundAlpha: 0.75,
     padding: 6,
 };
+
+export const RESPAWN = {
+    delay: 3000,            // so lange (ms) bleibt ein zerstörtes auto weg, bis es neu startet
+    messageFontSize: 44,
+    messageY: VIEW_HEIGHT / 3,
+    depth: 300,
+};

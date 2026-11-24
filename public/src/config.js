@@ -189,3 +189,16 @@ export const MINIMAP = {
     pulseRadius: 6,             // wie weit der ring um das eigene auto wächst
     titleFontSize: 10,
 };
+
+export const SCOREBOARD = {
+    key: "TAB",                // gedrückt halten zeigt die rangliste
+    width: 460,
+    padding: 18,
+    titleHeight: 44,
+    rowHeight: 28,
+    fontSize: 18,
+    depth: 200,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.92,
+    borderColor: 0x4ec9f5,
+};

@@ -266,6 +266,20 @@ export const RESPAWN = {
     depth: 300,
 };
 
+// runden: läuft bis nur noch einer lebt oder die zeit abläuft, danach pause und neue runde
+export const ROUND = {
+    duration: 5 * 60 * 1000,   // ms: längste dauer einer runde
+    intermission: 8000,        // ms: pause nach einer runde
+    minPlayers: 2,             // so viele spieler braucht es für eine runde
+    hudY: 14,
+    hudFontSize: 22,
+    bannerY: 120,
+    bannerFontSize: 46,
+    hintY: VIEW_HEIGHT - 70,
+    hintFontSize: 22,
+    depth: 250,
+};
+
 export const REPAIR_KIT = {
     positions: [
         { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.4 },

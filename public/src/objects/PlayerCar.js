@@ -129,10 +129,13 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         return { x: this.x, y: this.y, angle: this.angle };
     }
 
-    // daten vom server übernehmen (startposition, farbe)
-    applyServerData(player) {
-        this.setPosition(player.x, player.y);
-        this.setAngle(player.angle);
+    // daten vom server übernehmen (startposition, farbe).
+    // applyPosition = false: das auto bleibt, wo es ist (nach dem intro, sonst springt es zurück)
+    applyServerData(player, applyPosition = true) {
+        if (applyPosition) {
+            this.setPosition(player.x, player.y);
+            this.setAngle(player.angle);
+        }
         if (player.vehicleKey) this.setTexture(player.vehicleKey);
     }
 }

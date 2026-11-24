@@ -39,8 +39,9 @@ export class Multiplayer {
     onInit(data) {
         this.playerId = data.id;
 
-        // für unser car die position, den winkel und die farbe vom server übernehmen
-        this.localCar.applyServerData(data.players[this.playerId]);
+        // für unser car die position, den winkel und die farbe vom server übernehmen.
+        // nach dem intro behalten wir die position, sonst springt das auto zum startpunkt zurück.
+        this.localCar.applyServerData(data.players[this.playerId], !this.scene.introPlayed);
         this.playerHud.setPlayers(data.players);
 
         for (const player of Object.values(data.players)) {

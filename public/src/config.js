@@ -2,8 +2,9 @@
 
 export const VIEW_WIDTH = 1200;
 export const VIEW_HEIGHT = 800;
-export const WORLD_WIDTH = VIEW_WIDTH * 2;
-export const WORLD_HEIGHT = VIEW_HEIGHT * 2;
+export const WORLD_SIZE_FACTOR = 3;   // wie viele bildschirme breit/hoch die welt ist
+export const WORLD_WIDTH = VIEW_WIDTH * WORLD_SIZE_FACTOR;
+export const WORLD_HEIGHT = VIEW_HEIGHT * WORLD_SIZE_FACTOR;
 
 export const DEBUG = false;  // zeigt die hitboxen an
 
@@ -71,7 +72,9 @@ export const SPEED_BOOST = {
 
 export const OBSTACLES = {
     seed: 482731,
-    count: 20,
+    count: 40,              // so viele hindernisse (höchstens gridColumns * gridRows)
+    gridColumns: 8,         // die welt wird in felder geteilt, pro feld höchstens ein hindernis
+    gridRows: 6,
     attemptsPerObstacle: 80,
     edgeMargin: 140,
     spacing: 80,
@@ -182,4 +185,64 @@ export const PLAYER_NAME = {
     fieldHeight: 38,
     labelY: 39,
     fontSize: 14,
+};
+
+export const MINIMAP = {
+    width: 270,                 // breite der karte (höhe folgt dem seitenverhältnis der welt)
+    margin: 16,                 // abstand zum rechten und unteren bildrand
+    toggleKey: "M",             // taste zum ein- und ausblenden
+    depth: 100,
+    cornerRadius: 10,
+    backgroundColor: 0x0b1118,
+    backgroundAlpha: 0.82,
+    borderColor: 0x4ec9f5,
+    gridColor: 0x4ec9f5,
+    gridAlpha: 0.12,
+    gridLines: 6,               // linien pro achse
+    obstacleColor: 0x7f8c9b,
+    obstacleAlpha: 0.9,
+    viewColor: 0xffffff,        // rahmen, der den sichtbaren ausschnitt zeigt
+    viewAlpha: 0.35,
+    boostColor: 0xffd166,
+    boostRadius: 5,
+    remoteDotRadius: 3.5,
+    ownArrowSize: 7,
+    ownColor: 0xffffff,
+    pulseSpeed: 260,            // millisekunden pro puls-schwingung
+    pulseRadius: 6,             // wie weit der ring um das eigene auto wächst
+    titleFontSize: 10,
+};
+
+export const SCOREBOARD = {
+    key: "TAB",                // gedrückt halten zeigt die rangliste
+    width: 460,
+    padding: 18,
+    titleHeight: 44,
+    rowHeight: 28,
+    fontSize: 18,
+    depth: 200,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.92,
+    borderColor: 0x4ec9f5,
+};
+
+export const KILLFEED = {
+    x: 16,
+    y: 44,                 // unter der ping-anzeige
+    maxLines: 5,
+    lineHeight: 26,
+    showTime: 5000,        // so lange bleibt eine zeile stehen (ms)
+    fadeTime: 600,
+    fontSize: 16,
+    depth: 150,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.75,
+    padding: 6,
+};
+
+export const RESPAWN = {
+    delay: 3000,            // so lange (ms) bleibt ein zerstörtes auto weg, bis es neu startet
+    messageFontSize: 44,
+    messageY: VIEW_HEIGHT / 3,
+    depth: 300,
 };

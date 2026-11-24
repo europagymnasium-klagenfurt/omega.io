@@ -1,7 +1,7 @@
 // verwaltet alle spieler am server (nur daten, kein socket-code)
 
 import { DEFAULT_VEHICLE_KEY, getVehicle } from "../shared/vehicles.js";
-import { HEALTH_BAR, ARMOR, PLAYER_NAME } from "../public/src/config.js";
+import { HEALTH_BAR, ARMOR, PLAYER_NAME, OBSTACLES } from "../public/src/config.js";
 
 const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
 
@@ -31,6 +31,8 @@ export function addPlayer(id, requestedName) {
         color: color,
         health: HEALTH_BAR.points,
         armor: ARMOR.default,
+        kills: 0,
+        deaths: 0,
     };
     return players[id];
 }
@@ -43,6 +45,32 @@ export function damagePlayer(id, damage) {
 
     const health = player.health - damage / player.armor;
     player.health = Math.max(0, Math.round(health * 1000) / 1000);
+    return player;
+}
+
+// abschuss verbuchen: der schütze bekommt einen kill, das opfer einen tod
+export function recordKill(killerId, victimId) {
+    const killer = players[killerId];
+    const victim = players[victimId];
+    if (!killer || !victim) return null;
+
+    killer.kills += 1;
+    victim.deaths += 1;
+    return { killer, victim };
+}
+
+// zerstörtes auto neu starten: volle lebenspunkte, zufälliger startplatz aus der freien startreihe
+// (dort stehen garantiert keine hindernisse, siehe OBSTACLES.spawn)
+export function respawnPlayer(id) {
+    const player = players[id];
+    if (!player) return null;
+
+    const spawn = OBSTACLES.spawn;
+    const slot = Math.floor(Math.random() * spawn.count);
+    player.x = spawn.x + slot * spawn.spacing;
+    player.y = spawn.y;
+    player.angle = 0;
+    player.health = HEALTH_BAR.points;
     return player;
 }
 

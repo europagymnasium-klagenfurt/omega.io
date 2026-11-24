@@ -12,6 +12,7 @@ export class GarageField {
         this.multiplayer = multiplayer;
         this.playerName = playerName;
         this.garages = GARAGES.list.map((data) => new Garage(scene, data));
+        for (const garage of this.garages) scene.physics.add.collider(car, garage.walls);
         this.entering = false;
         this.armed = null;   // wird gesetzt, sobald der server die startposition geschickt hat
     }

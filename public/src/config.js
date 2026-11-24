@@ -95,6 +95,7 @@ export const OBSTACLES = {
 export const GARAGES = {
     width: 240,
     height: 170,
+    wallThickness: 28,       // hitbox oben und unten: so wird die garage zum tunnel (seitlich offen)
     enterRatio: 0.55,        // so weit muss das auto drin sein (anteil der garagengröße)
     maxStay: 10000,          // ms: so lange darf man höchstens in der garage bleiben
     cooldown: 60000,         // ms: so lange sind die garagen danach gesperrt

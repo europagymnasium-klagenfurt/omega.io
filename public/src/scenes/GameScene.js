@@ -17,7 +17,7 @@ import { ObstacleField } from "../systems/ObstacleField.js";
 import { ObstacleDamage } from "../systems/ObstacleDamage.js";
 import { Minimap } from "../systems/Minimap.js";
 import { Scoreboard } from "../systems/Scoreboard.js";
-import { KillFeed } from "../systems/KillFeed.js";
+import { KillMessages } from "../systems/KillMessages.js";
 import { RoundHud } from "../systems/RoundHud.js";
 import { Spectator } from "../systems/Spectator.js";
 import { Respawn } from "../systems/Respawn.js";
@@ -171,7 +171,7 @@ export class GameScene extends Phaser.Scene {
         this.obstacleDamage = new ObstacleDamage(this, this.car, this.obstacleField, this.playerHealth);
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
         this.scoreboard = new Scoreboard(this);
-        this.killFeed = new KillFeed(this);
+        this.killMessages = new KillMessages(this);
         this.respawn = new Respawn(this, this.car, this.multiplayer);
         this.roundHud = new RoundHud(this);
         this.spectator = new Spectator(this, this.car, this.multiplayer);

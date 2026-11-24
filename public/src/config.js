@@ -299,6 +299,25 @@ export const HIT_FEEDBACK = {
     depth: 250,
 };
 
+export const KILLMESSAGES = {
+    x: 16,                      // abstand zum linken bildrand
+    y: 44,                      // abstand zum oberen bildrand (unter der ping-anzeige)
+    maxEntries: 5,              // so viele meldungen gleichzeitig
+    entryDuration: 5000,        // millisekunden, bis eine meldung ausgeblendet wird
+    fadeDuration: 500,
+    rowHeight: 28,
+    padding: 8,
+    fontSize: 14,
+    depth: 150,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.85,
+    borderColor: 0xff5555,
+    killerColor: "#ffd166",     // nur falls der server keine spielerfarbe mitschickt
+    victimColor: "#ff7a7a",
+    iconColor: "#ffffff",
+    icon: "💥",                 // zeichen zwischen killer und opfer
+};
+
 export const KILLSTREAK = {
     milestones: [5, 10, 15, 20, 30, 50, 100, 1000],   // bei diesen killstreaks werden alle benachrichtigt
     y: VIEW_HEIGHT / 5,         // höhe der meldung (mitte des bildschirms oben)

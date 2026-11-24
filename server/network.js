@@ -2,11 +2,12 @@
 
 import { EVENTS } from "../shared/events.js";
 import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, checkRoundEnd } from "./rounds.js";
-import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
+import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
+const repairClaimed = REPAIR_KIT.positions.map(() => false);   // ist das kit gerade eingesammelt?
 
 export function setupNetwork(io) {
     setupRounds(io);
@@ -28,6 +29,7 @@ export function setupNetwork(io) {
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
                 round: getRoundInfo(),
+                repairClaimed: repairClaimed,
             });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
             if (isNew) onPlayerJoined();
@@ -57,6 +59,29 @@ export function setupNetwork(io) {
                 boostRespawnTimer = null;
                 io.emit(EVENTS.BOOST_PICKUP_RESPAWNED);
             }, SPEED_BOOST.respawnDelay);
+        });
+
+        // reparatur-kit: server prüft abstand, lebenspunkte und ob das kit noch da ist
+        socket.on(EVENTS.REPAIR_PICKUP, (data = {}) => {
+            const index = data.index;
+            const spot = REPAIR_KIT.positions[index];
+            const player = getPlayer(id);
+            const valid = spot && !repairClaimed[index] && player
+                && player.health > 0 && player.health < HEALTH_BAR.points
+                && Math.hypot(player.x - spot.x, player.y - spot.y) <= REPAIR_KIT.pickupRadius;
+            if (!valid) {
+                socket.emit(EVENTS.REPAIR_REJECTED, { index: index });
+                return;
+            }
+
+            repairClaimed[index] = true;
+            healPlayer(id, REPAIR_KIT.heal);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+            io.emit(EVENTS.REPAIR_TAKEN, { index: index });
+            setTimeout(() => {
+                repairClaimed[index] = false;
+                io.emit(EVENTS.REPAIR_RESPAWNED, { index: index });
+            }, REPAIR_KIT.respawnDelay);
         });
 
         // schuss an alle anderen weitergeben
@@ -99,6 +124,39 @@ export function setupNetwork(io) {
                 });
 
                 // ausgeschieden bis zur nächsten runde: ist nur noch einer übrig, ist die runde vorbei
+                checkRoundEnd();
+            }
+        });
+
+        // aufprall gegen ein hindernis: schaden mit abklingzeit, damit nicht jeder frame zählt
+        let lastObstacleHitTime = 0;
+        socket.on(EVENTS.OBSTACLE_HIT, () => {
+            const player = getPlayer(id);
+            if (!isRunning() || !player || player.health <= 0) return;
+
+            const now = Date.now();
+            if (now - lastObstacleHitTime < OBSTACLE_DAMAGE.cooldown) return;
+
+            lastObstacleHitTime = now;
+            damagePlayer(id, OBSTACLE_DAMAGE.damage);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+
+            // am hindernis zerstört: als tod zählen (ohne gegner), im killfeed steht der name dann zweimal
+            if (player.health <= 0) {
+                player.deaths += 1;
+                io.emit(EVENTS.PLAYER_KILLED, {
+                    killerId: id,
+                    killerName: player.name,
+                    killerColor: player.color,
+                    killerKills: player.kills,
+                    victimId: id,
+                    victimName: player.name,
+                    victimColor: player.color,
+                    victimDeaths: player.deaths,
+                });
+
+                // ausgeschieden bis zur nächsten runde (zuschauen übernimmt irgendeinen lebenden spieler)
+                player.alive = false;
                 checkRoundEnd();
             }
         });

@@ -14,12 +14,15 @@ import { ExhaustSmoke } from "../systems/ExhaustSmoke.js";
 import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
 import { ObstacleField } from "../systems/ObstacleField.js";
+import { ObstacleDamage } from "../systems/ObstacleDamage.js";
 import { Minimap } from "../systems/Minimap.js";
 import { Scoreboard } from "../systems/Scoreboard.js";
 import { KillFeed } from "../systems/KillFeed.js";
 import { RoundHud } from "../systems/RoundHud.js";
 import { Spectator } from "../systems/Spectator.js";
 import { Respawn } from "../systems/Respawn.js";
+import { RepairKits } from "../systems/RepairKits.js";
+import { HitFeedback } from "../systems/HitFeedback.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -162,12 +165,15 @@ export class GameScene extends Phaser.Scene {
         this.garageField = new GarageField(this, this.car, this.playerHealth, this.multiplayer, this.playerName);
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
+        this.obstacleDamage = new ObstacleDamage(this, this.car, this.obstacleField, this.playerHealth);
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
         this.scoreboard = new Scoreboard(this);
         this.killFeed = new KillFeed(this);
         this.respawn = new Respawn(this, this.car, this.multiplayer);
         this.roundHud = new RoundHud(this);
         this.spectator = new Spectator(this, this.car, this.multiplayer);
+        this.repairKits = new RepairKits(this, this.car, this.playerHealth);
+        this.hitFeedback = new HitFeedback(this, this.multiplayer);
     }
 
     update(time, delta) {
@@ -188,6 +194,7 @@ export class GameScene extends Phaser.Scene {
         this.scoreboard.update();
         this.respawn.update();
         this.roundHud.update();
+        this.repairKits.update(time);
     }
 
     getMovementInput() {

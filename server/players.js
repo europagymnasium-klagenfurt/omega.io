@@ -33,7 +33,8 @@ export function addPlayer(id, requestedName) {
         armor: ARMOR.default,
         kills: 0,
         deaths: 0,
-        alive: true,   // false = ausgeschieden, bis die nächste runde beginnt
+        roundKills: 0,   // abschüsse in der aktuellen runde (entscheidet den sieger)
+        alive: true,   // false = ausgeschieden, bis zum neustart
     };
     return players[id];
 }
@@ -56,6 +57,7 @@ export function recordKill(killerId, victimId) {
     if (!killer || !victim) return null;
 
     killer.kills += 1;
+    killer.roundKills += 1;
     victim.deaths += 1;
     victim.alive = false;
     return { killer, victim };
@@ -76,7 +78,7 @@ export function respawnPlayer(id, slot = Math.floor(Math.random() * OBSTACLES.sp
     return player;
 }
 
-// spieler, der mitten in einer runde dazukommt: sieht zu, bis die nächste runde beginnt
+// spieler, der mitten in einer runde dazukommt: sieht zu, bis er neu startet
 export function setSpectator(id) {
     const player = players[id];
     if (!player) return null;

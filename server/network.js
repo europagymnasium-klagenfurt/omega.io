@@ -1,7 +1,7 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, checkRoundEnd } from "./rounds.js";
+import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, playerDied, playerLeft, scheduleRespawn } from "./rounds.js";
 import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer } from "./players.js";
 import { SPEED_BOOST, MACHINE_GUN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
@@ -21,7 +21,10 @@ export function setupNetwork(io) {
             const isNew = !getPlayer(id);
             if (isNew) {
                 addPlayer(id, data.name);
-                if (isRunning()) setSpectator(id);   // mitten in der runde: zusehen bis zur nächsten
+                if (isRunning()) {   // mitten in der runde: erst zusehen, dann starten
+                    setSpectator(id);
+                    scheduleRespawn(id);
+                }
             }
             setPlayerVehicle(id, data.vehicleKey);
             socket.emit(EVENTS.INIT, {
@@ -123,8 +126,8 @@ export function setupNetwork(io) {
                     victimDeaths: victim.deaths,
                 });
 
-                // ausgeschieden bis zur nächsten runde: ist nur noch einer übrig, ist die runde vorbei
-                checkRoundEnd();
+                // ausgeschieden: startet nach der wartezeit neu, ist nur noch einer übrig, ist die runde vorbei
+                playerDied(target.id);
             }
         });
 
@@ -155,9 +158,9 @@ export function setupNetwork(io) {
                     victimDeaths: player.deaths,
                 });
 
-                // ausgeschieden bis zur nächsten runde (zuschauen übernimmt irgendeinen lebenden spieler)
+                // ausgeschieden (zuschauen übernimmt irgendeinen lebenden spieler)
                 player.alive = false;
-                checkRoundEnd();
+                playerDied(id);
             }
         });
 
@@ -166,7 +169,7 @@ export function setupNetwork(io) {
             if (getPlayer(id)) {
                 socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
                 removePlayer(id);
-                checkRoundEnd();
+                playerLeft(id);
             }
         });
     });

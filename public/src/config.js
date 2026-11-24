@@ -259,6 +259,7 @@ export const ROUND = {
     duration: 5 * 60 * 1000,   // ms: längste dauer einer runde
     intermission: 8000,        // ms: pause nach einer runde
     minPlayers: 2,             // so viele spieler braucht es für eine runde
+    respawnDelay: 30000,       // ms: so lange sieht ein ausgeschiedener spieler zu, dann startet er wieder
     hudY: 14,
     hudFontSize: 22,
     bannerY: 120,

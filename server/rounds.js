@@ -1,9 +1,9 @@
-// runden am server: eine runde läuft, bis nur noch einer lebt oder die zeit abläuft.
-// danach kurze pause, dann starten alle neu. wer stirbt, scheidet bis zur nächsten runde aus.
+// runden am server: eine runde dauert ROUND.duration (5 minuten). wer die meisten abschüsse in dieser runde hat, gewinnt.
+// danach kurze pause, dann starten alle neu. wer stirbt, sieht eine weile zu und startet dann wieder (ROUND.respawnDelay).
 
 import { EVENTS } from "../shared/events.js";
 import { ROUND } from "../public/src/config.js";
-import { getAllPlayers, respawnPlayer } from "./players.js";
+import { getAllPlayers, getPlayer, respawnPlayer } from "./players.js";
 
 let io = null;
 let state = "waiting";   // waiting (zu wenig spieler) | running | intermission
@@ -11,6 +11,7 @@ let roundNumber = 0;
 let endsAt = 0;
 let roundTimer = null;
 let breakTimer = null;
+const respawnTimers = {};   // spieler-id -> timer bis zum neustart
 
 export function setupRounds(socketServer) {
     io = socketServer;
@@ -34,11 +35,31 @@ export function onPlayerJoined() {
     if (state === "waiting") tryStart();
 }
 
-// ein spieler ist ausgeschieden oder weg: gewinner prüfen
-export function checkRoundEnd() {
-    if (state !== "running") return;
-    const alive = Object.values(getAllPlayers()).filter((player) => player.alive);
-    if (alive.length <= 1) endRound(alive[0] ?? null, "last");
+// spieler ist gestorben: nach der wartezeit startet er wieder, außer die runde ist vorher vorbei
+export function playerDied(id) {
+    if (state === "running") scheduleRespawn(id);
+}
+
+// spieler ist weg: kein neustart mehr
+export function playerLeft(id) {
+    clearTimeout(respawnTimers[id]);
+    delete respawnTimers[id];
+}
+
+export function scheduleRespawn(id) {
+    clearTimeout(respawnTimers[id]);
+    respawnTimers[id] = setTimeout(() => {
+        delete respawnTimers[id];
+        if (state !== "running" || !getPlayer(id)) return;
+        const player = respawnPlayer(id);
+        io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
+        io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
+    }, ROUND.respawnDelay);
+}
+
+function clearRespawns() {
+    for (const id of Object.keys(respawnTimers)) clearTimeout(respawnTimers[id]);
+    for (const id of Object.keys(respawnTimers)) delete respawnTimers[id];
 }
 
 function tryStart() {
@@ -51,6 +72,7 @@ function tryStart() {
 }
 
 function startRound() {
+    clearRespawns();
     roundNumber += 1;
     state = "running";
     endsAt = Date.now() + ROUND.duration;
@@ -59,6 +81,7 @@ function startRound() {
     const ids = Object.keys(getAllPlayers());
     ids.sort(() => Math.random() - 0.5);
     ids.forEach((id, slot) => {
+        getPlayer(id).roundKills = 0;
         const player = respawnPlayer(id, slot);
         io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
         io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
@@ -69,16 +92,16 @@ function startRound() {
     roundTimer = setTimeout(endByTime, ROUND.duration);
 }
 
-// zeit abgelaufen: wer am meisten leben hat, gewinnt (bei gleichstand unentschieden)
+// zeit abgelaufen: wer die meisten abschüsse in dieser runde hat, gewinnt (bei gleichstand oder ohne abschüsse unentschieden)
 function endByTime() {
-    const alive = Object.values(getAllPlayers())
-        .filter((player) => player.alive)
-        .sort((a, b) => b.health - a.health);
-    const draw = alive.length > 1 && alive[0].health === alive[1].health;
-    endRound(draw ? null : alive[0] ?? null, "time");
+    const ranking = Object.values(getAllPlayers()).sort((a, b) => b.roundKills - a.roundKills);
+    const best = ranking[0];
+    const draw = !best || best.roundKills === 0 || (ranking[1] && ranking[1].roundKills === best.roundKills);
+    endRound(draw ? null : best, "time");
 }
 
 function endRound(winner, reason) {
+    clearRespawns();
     state = "intermission";
     clearTimeout(roundTimer);
     io.emit(EVENTS.ROUND_ENDED, {

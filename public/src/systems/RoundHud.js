@@ -68,9 +68,7 @@ export class RoundHud {
         } else if (this.state === "intermission") {
             const seconds = Math.max(0, Math.ceil((this.nextAt - now) / 1000));
             this.timer.setText(`Nächste Runde in ${seconds}`);
-            const title = this.winnerName
-                ? `${this.winnerName} gewinnt!`
-                : (this.reason === "time" ? "Unentschieden" : "Niemand hat überlebt");
+            const title = this.winnerName ? `${this.winnerName} gewinnt!` : "Unentschieden";
             this.banner.setText(`RUNDE VORBEI\n${title}`);
         } else {
             this.timer.setText("Warte auf weitere Spieler …");

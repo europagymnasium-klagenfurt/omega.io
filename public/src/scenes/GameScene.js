@@ -195,6 +195,7 @@ export class GameScene extends Phaser.Scene {
         this.scoreboard.update();
         this.respawn.update();
         this.roundHud.update();
+        this.spectator.update();
         this.repairKits.update(time);
     }
 

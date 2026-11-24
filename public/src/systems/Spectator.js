@@ -1,5 +1,6 @@
 // zuschauen: wer ausgeschieden ist, sieht dem spieler zu, der ihn abgeschossen hat.
-// stirbt dieser auch, geht die kamera zum nächsten lebenden spieler. mit der neuen runde geht es zurück zum eigenen auto.
+// stirbt dieser auch, geht die kamera zum nächsten lebenden spieler. nach der wartezeit (ROUND.respawnDelay) startet man neu
+// und die kamera geht zurück zum eigenen auto.
 
 import { socket, EVENTS } from "../network.js";
 import { ROUND, VIEW_WIDTH } from "../config.js";
@@ -13,6 +14,7 @@ export class Spectator {
         this.dead = new Set();  // ausgeschiedene spieler
         this.killedBy = {};     // opfer-id -> schützen-id
         this.targetId = null;
+        this.respawnAt = 0;     // lokale zeit, zu der man selbst wieder startet
 
         this.hint = scene.add.text(VIEW_WIDTH / 2, ROUND.hintY, "", {
             color: "#ffffff",
@@ -29,6 +31,7 @@ export class Spectator {
             [EVENTS.PLAYER_LEFT]: (data) => this.onLeft(data.id),
             [EVENTS.PLAYER_KILLED]: (data) => this.onKilled(data),
             [EVENTS.ROUND_STARTED]: () => this.onRoundStarted(),
+            [EVENTS.PLAYER_RESPAWNED]: (data) => this.onRespawned(data.id),
         };
         for (const [event, handler] of Object.entries(this.handlers)) {
             socket.on(event, handler);
@@ -39,7 +42,10 @@ export class Spectator {
     onInit(data) {
         for (const player of Object.values(data.players)) this.onJoined(player);
         // mitten in der runde dazugekommen: es gibt keinen schützen, also irgendjemandem zusehen
-        if (this.dead.has(data.id)) this.follow(this.pickTarget());
+        if (this.dead.has(data.id)) {
+            this.respawnAt = Date.now() + ROUND.respawnDelay;
+            this.follow(this.pickTarget());
+        }
     }
 
     onJoined(player) {
@@ -61,6 +67,7 @@ export class Spectator {
         this.names[data.killerId] = data.killerName;
 
         if (data.victimId === this.multiplayer.playerId) {
+            this.respawnAt = Date.now() + ROUND.respawnDelay;
             this.follow(this.pickTarget(data.killerId));
         } else if (data.victimId === this.targetId && this.dead.has(this.multiplayer.playerId)) {
             this.follow(this.pickTarget(this.killedBy[data.victimId]));
@@ -71,6 +78,12 @@ export class Spectator {
         this.dead.clear();
         this.killedBy = {};
         this.follow(null);
+    }
+
+    // ein spieler startet wieder: er kann wieder angeschaut werden, bei mir selbst geht die kamera zurück
+    onRespawned(id) {
+        this.dead.delete(id);
+        if (id === this.multiplayer.playerId) this.follow(null);
     }
 
     // bevorzugt der wunsch-spieler (schütze), wenn er lebt, sonst irgendein lebender
@@ -88,8 +101,19 @@ export class Spectator {
         const target = id ? this.multiplayer.remoteCars[id] : null;
         camera.startFollow(target ?? this.car, true);
         this.hint.setVisible(this.dead.has(this.multiplayer.playerId));
-        if (target) this.hint.setText(`Du siehst ${this.names[id] ?? "?"} zu\nbis die Runde vorbei ist`);
-        else if (this.hint.visible) this.hint.setText("Alle anderen sind ausgeschieden\nbis die Runde vorbei ist");
+        this.updateHint();
+    }
+
+    // hinweistext mit restzeit bis zum eigenen neustart (jeden frame von der scene aufgerufen)
+    update() {
+        if (this.hint.visible) this.updateHint();
+    }
+
+    updateHint() {
+        const seconds = Math.max(0, Math.ceil((this.respawnAt - Date.now()) / 1000));
+        const name = this.names[this.targetId];
+        const first = this.targetId ? `Du siehst ${name ?? "?"} zu` : "Alle anderen sind ausgeschieden";
+        this.hint.setText(`${first}\nNeustart in ${seconds}`);
     }
 
     destroy() {

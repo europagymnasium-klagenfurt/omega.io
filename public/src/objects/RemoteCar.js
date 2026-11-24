@@ -1,6 +1,6 @@
 // auto eines anderen spielers. hat keine eigene physik, die position kommt vom server.
 
-import { CAR } from "../config.js";
+import { CAR, getVehicleStats } from "../config.js";
 import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
 import { HealthBar } from "./HealthBar.js";
 
@@ -26,6 +26,7 @@ export class RemoteCar extends Phaser.Physics.Arcade.Sprite {
         const offsetX = (this.width - radius * 2) / 2;
         const offsetY = (this.height - radius * 2) / 2;
         this.setCircle(radius, offsetX, offsetY);
+        this.healthBar?.setMaxHealth(getVehicleStats(this.texture.key).health);
     }
 
     preUpdate(time, delta) {

@@ -12,7 +12,7 @@ export class PlayerHealth {
 
         this.handlers = {
             [EVENTS.INIT]: (data) => this.onInit(data),
-            [EVENTS.HEALTH_CHANGED]: (data) => this.setHealth(data.id, data.health),
+            [EVENTS.HEALTH_CHANGED]: (data) => this.setHealth(data.id, data.health, data.maxHealth),
         };
 
         for (const [event, handler] of Object.entries(this.handlers)) {
@@ -24,17 +24,17 @@ export class PlayerHealth {
     // lebenspunkte aller spieler vom server übernehmen
     onInit(data) {
         for (const player of Object.values(data.players)) {
-            if (player.health !== undefined) this.setHealth(player.id, player.health);
+            if (player.health !== undefined) this.setHealth(player.id, player.health, player.maxHealth);
         }
     }
 
-    setHealth(id, health) {
+    setHealth(id, health, maxHealth) {
         if (id !== this.multiplayer.playerId) {
-            this.multiplayer.remoteCars[id]?.healthBar.setHealth(health);
+            this.multiplayer.remoteCars[id]?.healthBar.setHealth(health, maxHealth);
             return;
         }
 
-        this.car.healthBar.setHealth(health);
+        this.car.healthBar.setHealth(health, maxHealth);
         if (health <= 0 && this.alive) this.die();
     }
 

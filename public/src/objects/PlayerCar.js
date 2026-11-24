@@ -1,6 +1,6 @@
 // das eigene auto: physik und steuerung
 
-import { CAR, SPEED_BOOST } from "../config.js";
+import { CAR, SPEED_BOOST, getVehicleStats } from "../config.js";
 import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
 import { HealthBar } from "./HealthBar.js";
 
@@ -54,7 +54,7 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         }
 
         const angle = this.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
-        const speed = CAR.speed * this.speedMultiplier;
+        const speed = CAR.speed * getVehicleStats(this.texture.key).speed * this.speedMultiplier;
 
         if (cursors.up.isDown) {
             this.scene.physics.velocityFromRotation(angle, speed, this.body.velocity);

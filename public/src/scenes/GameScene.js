@@ -13,6 +13,8 @@ import { PlayerHud } from "../systems/PlayerHud.js";
 import { ExhaustSmoke } from "../systems/ExhaustSmoke.js";
 import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
+import { BrowserShortcutBlocker } from "../systems/BrowserShortcutBlocker.js";
+import { Mines } from "../systems/Mines.js";
 import { ObstacleField } from "../systems/ObstacleField.js";
 
 export class GameScene extends Phaser.Scene {
@@ -148,6 +150,8 @@ export class GameScene extends Phaser.Scene {
         this.playerHealth = new PlayerHealth(this, this.car, this.multiplayer);
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
+        this.mines = new Mines(this, this.playerHealth);
+        this.shortcutBlocker = new BrowserShortcutBlocker(this);
     }
 
     update(time, delta) {
@@ -161,6 +165,7 @@ export class GameScene extends Phaser.Scene {
         if (isAlive) this.car.drive(movementInput, this.shiftKey);
         this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
         this.machineGun.update(time);
+        this.mines.update(delta);
         this.playerHud.update(this.car.getSpeedKmh(), delta);
         this.multiplayer.sendState();
     }

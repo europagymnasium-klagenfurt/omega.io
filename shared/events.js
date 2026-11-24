@@ -22,4 +22,7 @@ export const EVENTS = {
     BOOST_GRANTED: "boostGranted",   // speed-boost nur für den sammler
     SHOT_FIRED: "shotFired",         // {id, x, y, vx, vy} schuss eines anderen spielers
     HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
+    PLAYER_KILLED: "playerKilled",   // {killerName, victimName} ein spieler wurde abgeschossen
+    GOLD_CHANGED: "goldChanged",     // {id, gold} spieler leuchtet gold (ab 10 kills) oder nicht mehr
+    KILLSTREAK: "killstreak",        // {name, streak} ein spieler hat eine killstreak-marke erreicht
 };

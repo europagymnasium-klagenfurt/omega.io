@@ -31,6 +31,7 @@ export function addPlayer(id, requestedName) {
         color: color,
         health: HEALTH_BAR.points,
         armor: ARMOR.default,
+        killStreak: 0,
     };
     return players[id];
 }
@@ -44,6 +45,15 @@ export function damagePlayer(id, damage) {
     const health = player.health - damage / player.armor;
     player.health = Math.max(0, Math.round(health * 1000) / 1000);
     return player;
+}
+
+// killstreak erhöhen und neuen wert zurückgeben. das opfer verliert seine streak.
+export function addKill(killerId, victimId) {
+    if (players[victimId]) players[victimId].killStreak = 0;
+    const killer = players[killerId];
+    if (!killer) return 0;
+    killer.killStreak += 1;
+    return killer.killStreak;
 }
 
 export function getPlayer(id) {

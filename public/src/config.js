@@ -186,3 +186,45 @@ export const MINIMAP = {
     pulseRadius: 6,             // wie weit der ring um das eigene auto wächst
     titleFontSize: 10,
 };
+
+export const KILLFEED = {
+    x: 16,                      // abstand zum linken bildrand
+    y: 16,                      // abstand zum oberen bildrand
+    maxEntries: 5,              // so viele meldungen gleichzeitig
+    entryDuration: 5000,        // millisekunden, bis eine meldung ausgeblendet wird
+    fadeDuration: 500,
+    rowHeight: 28,
+    padding: 8,
+    fontSize: 14,
+    depth: 100,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.85,
+    borderColor: 0xff5555,
+    killerColor: "#ffd166",
+    victimColor: "#ff7a7a",
+    iconColor: "#ffffff",
+    icon: "💥",                 // zeichen zwischen killer und opfer
+};
+
+export const KILLSTREAK = {
+    milestones: [5, 10, 15, 20, 30, 50, 100, 1000],   // bei diesen killstreaks werden alle benachrichtigt
+    y: VIEW_HEIGHT / 5,         // höhe der meldung (mitte des bildschirms oben)
+    fontSize: 44,
+    color: "#ffd166",
+    duration: 3500,             // millisekunden, bis die meldung ausgeblendet wird
+    fadeDuration: 600,
+    depth: 1000,
+};
+
+export const GOLD_STREAK = {
+    minStreak: 10,              // ab so vielen kills in folge leuchtet der spieler gold
+    color: 0xffd700,
+    glowScale: 0.75,            // radius des leuchtens im verhältnis zur autogröße
+    glowAlpha: { min: 0.25, max: 0.55 },
+    pulseSpeed: 300,            // millisekunden pro puls-schwingung
+    glowDepth: 5,
+    arrowSize: 22,              // länge des pfeils am bildrand
+    arrowMargin: 40,            // abstand des pfeils zum bildrand
+    arrowDepth: 1000,
+    minimapRadius: 5,           // größe des punktes auf der minimap
+};

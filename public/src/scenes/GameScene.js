@@ -15,6 +15,9 @@ import { MachineGun } from "../systems/MachineGun.js";
 import { PlayerHealth } from "../systems/PlayerHealth.js";
 import { ObstacleField } from "../systems/ObstacleField.js";
 import { Minimap } from "../systems/Minimap.js";
+import { Killfeed } from "../systems/Killfeed.js";
+import { KillstreakAnnouncement } from "../systems/KillstreakAnnouncement.js";
+import { GoldStreak } from "../systems/GoldStreak.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -150,6 +153,9 @@ export class GameScene extends Phaser.Scene {
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
+        this.killfeed = new Killfeed(this);
+        this.killstreakAnnouncement = new KillstreakAnnouncement(this);
+        this.goldStreak = new GoldStreak(this, this.car, this.multiplayer);
     }
 
     update(time, delta) {
@@ -166,6 +172,7 @@ export class GameScene extends Phaser.Scene {
         this.playerHud.update(this.car.getSpeedKmh(), delta);
         this.multiplayer.sendState();
         this.minimap.update(time);
+        this.goldStreak.update(time);
     }
 
     getMovementInput() {

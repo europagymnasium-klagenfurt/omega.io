@@ -1,8 +1,8 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, addKill } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, KILLSTREAK, GOLD_STREAK } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
@@ -74,6 +74,16 @@ export function setupNetwork(io) {
             lastHitTime = now;
             damagePlayer(target.id, MACHINE_GUN.damage);
             io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
+            if (target.health <= 0) {
+                io.emit(EVENTS.PLAYER_KILLED, { killerName: shooter.name, victimName: target.name });
+                const victimWasGold = target.killStreak >= GOLD_STREAK.minStreak;
+                const streak = addKill(id, target.id);
+                if (victimWasGold) io.emit(EVENTS.GOLD_CHANGED, { id: target.id, gold: false });
+                if (streak === GOLD_STREAK.minStreak) io.emit(EVENTS.GOLD_CHANGED, { id: id, gold: true });
+                if (KILLSTREAK.milestones.includes(streak)) {
+                    io.emit(EVENTS.KILLSTREAK, { name: shooter.name, streak: streak });
+                }
+            }
         });
 
         socket.on("disconnect", () => {

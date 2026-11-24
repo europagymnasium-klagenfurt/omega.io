@@ -2,7 +2,7 @@
 // die statische karte (hintergrund, raster, hindernisse) wird einmal gezeichnet,
 // nur spieler und boost werden jeden frame neu gezeichnet. mit der taste M ein- und ausblenden.
 
-import { MINIMAP, SPEED_BOOST, VIEW_WIDTH, VIEW_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
+import { MINIMAP, GOLD_STREAK, SPEED_BOOST, VIEW_WIDTH, VIEW_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT } from "../config.js";
 
 export class Minimap {
     constructor(scene, car, multiplayer, playerHud, obstacleField, speedBoost) {
@@ -98,16 +98,25 @@ export class Minimap {
 
         // andere spieler in ihrer farbe
         for (const [id, remoteCar] of Object.entries(this.multiplayer.remoteCars)) {
-            const color = this.playerHud.players[id]?.color ?? 0xffffff;
+            const isGold = this.scene.goldStreak?.goldIds.has(id);
+            const color = isGold ? GOLD_STREAK.color : (this.playerHud.players[id]?.color ?? 0xffffff);
+            const radius = isGold ? GOLD_STREAK.minimapRadius : MINIMAP.remoteDotRadius;
             const rx = this.toMap(remoteCar.x);
             const ry = this.toMap(remoteCar.y);
+            if (isGold) this.drawGoldRing(g, rx, ry, radius, pulse);
             g.fillStyle(0x000000, 0.6);
-            g.fillCircle(rx, ry, MINIMAP.remoteDotRadius + 1.5);
+            g.fillCircle(rx, ry, radius + 1.5);
             g.fillStyle(color, 1);
-            g.fillCircle(rx, ry, MINIMAP.remoteDotRadius);
+            g.fillCircle(rx, ry, radius);
         }
 
         this.drawOwnCar(g, pulse);
+    }
+
+    // pulsierender goldener ring um spieler mit goldener killstreak
+    drawGoldRing(g, x, y, radius, pulse) {
+        g.lineStyle(2, GOLD_STREAK.color, 1 - pulse * 0.6);
+        g.strokeCircle(x, y, radius + 2 + pulse * MINIMAP.pulseRadius);
     }
 
     // eigenes auto: pfeil in fahrtrichtung mit pulsierendem ring
@@ -119,6 +128,7 @@ export class Minimap {
 
         g.lineStyle(1, color, 0.8 * (1 - pulse));
         g.strokeCircle(x, y, size + pulse * MINIMAP.pulseRadius);
+        if (this.scene.goldStreak?.goldIds.has(this.multiplayer.playerId)) this.drawGoldRing(g, x, y, size, pulse);
 
         // das auto-bild zeigt bei winkel 0 nach oben
         const points = [[0, -size], [size * 0.7, size * 0.8], [0, size * 0.35], [-size * 0.7, size * 0.8]]

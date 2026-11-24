@@ -160,3 +160,29 @@ export const PLAYER_NAME = {
     labelY: 39,
     fontSize: 14,
 };
+
+export const MINIMAP = {
+    width: 270,                 // breite der karte (höhe folgt dem seitenverhältnis der welt)
+    margin: 16,                 // abstand zum rechten und unteren bildrand
+    toggleKey: "M",             // taste zum ein- und ausblenden
+    depth: 100,
+    cornerRadius: 10,
+    backgroundColor: 0x0b1118,
+    backgroundAlpha: 0.82,
+    borderColor: 0x4ec9f5,
+    gridColor: 0x4ec9f5,
+    gridAlpha: 0.12,
+    gridLines: 6,               // linien pro achse
+    obstacleColor: 0x7f8c9b,
+    obstacleAlpha: 0.9,
+    viewColor: 0xffffff,        // rahmen, der den sichtbaren ausschnitt zeigt
+    viewAlpha: 0.35,
+    boostColor: 0xffd166,
+    boostRadius: 5,
+    remoteDotRadius: 3.5,
+    ownArrowSize: 7,
+    ownColor: 0xffffff,
+    pulseSpeed: 260,            // millisekunden pro puls-schwingung
+    pulseRadius: 6,             // wie weit der ring um das eigene auto wächst
+    titleFontSize: 10,
+};

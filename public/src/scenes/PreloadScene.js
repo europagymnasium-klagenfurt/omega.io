@@ -2,7 +2,7 @@
 // neue assets hier laden, damit sie in jeder scene verfügbar sind.
 
 import { ALL_VEHICLES } from "/shared/vehicles.js";
-import { SPEED_BOOST, MACHINE_GUN, OBSTACLES } from "../config.js";
+import { SPEED_BOOST, MACHINE_GUN, OBSTACLES, MINE } from "../config.js";
 
 export class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -50,6 +50,15 @@ export class PreloadScene extends Phaser.Scene {
         bulletGraphics.fillCircle(bulletSize / 2, bulletSize / 2, bulletSize / 2);
         bulletGraphics.generateTexture("bullet", bulletSize, bulletSize);
         bulletGraphics.destroy();
+
+        // mine: dunkle scheibe mit rotem punkt
+        const mineGraphics = this.make.graphics({}, false);
+        mineGraphics.fillStyle(0x222222, 1);
+        mineGraphics.fillCircle(MINE.size / 2, MINE.size / 2, MINE.size / 2);
+        mineGraphics.fillStyle(0xff2222, 1);
+        mineGraphics.fillCircle(MINE.size / 2, MINE.size / 2, MINE.size / 5);
+        mineGraphics.generateTexture("mine", MINE.size, MINE.size);
+        mineGraphics.destroy();
 
         this.scene.start("MenuScene");
     }

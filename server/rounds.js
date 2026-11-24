@@ -83,7 +83,7 @@ function startRound() {
     ids.forEach((id, slot) => {
         getPlayer(id).roundKills = 0;
         const player = respawnPlayer(id, slot);
-        io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
+        io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health, maxHealth: player.maxHealth });
         io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
     });
 

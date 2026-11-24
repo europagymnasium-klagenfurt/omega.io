@@ -1,11 +1,11 @@
 // lebensbalken über einem auto: wird kürzer und färbt sich von grün über orange nach rot
 
-import { HEALTH_BAR } from "../config.js";
+import { HEALTH_BAR, getVehicleStats } from "../config.js";
 
 export class HealthBar {
     constructor(scene, car) {
         this.car = car;
-        this.maxHealth = HEALTH_BAR.points;
+        this.maxHealth = getVehicleStats(car.texture.key).health;
         this.health = this.maxHealth;
         this.graphics = scene.add.graphics().setDepth(10);
 
@@ -20,7 +20,15 @@ export class HealthBar {
         );
     }
 
-    setHealth(health) {
+    // anderes fahrzeug: der anteil an lebenspunkten bleibt gleich
+    setMaxHealth(maxHealth) {
+        this.health = this.health / this.maxHealth * maxHealth;
+        this.maxHealth = maxHealth;
+        this.draw();
+    }
+
+    setHealth(health, maxHealth = this.maxHealth) {
+        this.maxHealth = maxHealth;
         this.health = Phaser.Math.Clamp(health, 0, this.maxHealth);
         this.draw();
     }

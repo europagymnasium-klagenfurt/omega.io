@@ -6,6 +6,8 @@ export const WORLD_SIZE_FACTOR = 3;   // wie viele bildschirme breit/hoch die we
 export const WORLD_WIDTH = VIEW_WIDTH * WORLD_SIZE_FACTOR;
 export const WORLD_HEIGHT = VIEW_HEIGHT * WORLD_SIZE_FACTOR;
 
+const HEALTH_BAR_POINTS = 5;   // normale lebenspunkte (HEALTH_BAR.points)
+
 export const DEBUG = false;  // zeigt die hitboxen an
 
 export const CAR = {
@@ -131,13 +133,59 @@ export const MACHINE_GUN = {
     hitTolerance: 150,    // server: treffer gilt nur, wenn ziel höchstens range + das entfernt ist
 };
 
-// panzerung pro fahrzeug: abgezogen wird damage / armor.
-// armor 2 = halber schaden = hält doppelt so viel aus. fahrzeuge ohne eintrag haben "default".
-export const ARMOR = {
-    default: 1,
-    "monster-croc": 2,
-    "monster-shark": 2,
-    "monster-face": 2,
+// werte pro fahrzeug (issue #18). fahrzeuge ohne eintrag haben "default".
+//   speed:    faktor auf CAR.speed
+//   health:   maximale lebenspunkte (der lebensbalken zeigt health / max)
+//   damage:   faktor auf MACHINE_GUN.damage (schaden an anderen autos)
+//   fireRate: faktor auf MACHINE_GUN.fireRate (kleiner = schießt schneller)
+const SPORT = { speed: 1.3, health: 3, damage: 0.6, fireRate: 0.6 };      // schnell, schwach, schießt schnell
+const MONSTER = { speed: 0.7, health: 8, damage: 1.6, fireRate: 2.2 };   // langsam, zäh, viel schaden, schießt deutlich langsamer
+export const VEHICLE_STATS = {
+    default: { speed: 1, health: HEALTH_BAR_POINTS, damage: 1, fireRate: 1 },
+    "sport-formula": SPORT,
+    "sport-hyundai": SPORT,
+    "sport-blue": SPORT,
+    "monster-croc": MONSTER,
+    "monster-shark": MONSTER,
+    "monster-face": MONSTER,
+    "fictional-delorean": { speed: 1.3, health: HEALTH_BAR_POINTS, damage: 1, fireRate: 1 },    // schnell, sonst normal
+    "fictional-gtr": { speed: 1.3, health: HEALTH_BAR_POINTS, damage: 1.3, fireRate: 1 },       // schnell, guter schaden
+    "fictional-kart": { speed: 1.15, health: 6, damage: 1.2, fireRate: 0.85 },                  // kann alles gut
+};
+
+export function getVehicleStats(vehicleKey) {
+    return VEHICLE_STATS[vehicleKey] ?? VEHICLE_STATS.default;
+}
+
+// minen: mit STRG legt man hinter dem auto eine mine ab (der server rechnet alles)
+export const MINE = {
+    cooldown: 20000,          // millisekunden, bis man die nächste mine legen darf
+    lifetime: 10000,          // millisekunden, dann verschwindet die mine von selbst
+    dropOffset: 90,           // abstand hinter dem auto, wo die mine liegt
+    triggerRadius: 45,        // so nah muss ein anderes auto kommen, damit sie explodiert
+    damage: 2,                // lebenspunkte, die eine explosion kostet
+    size: 40,                 // durchmesser der mine
+    explosionScale: 3,        // so groß wird die explosion (mal size)
+    explosionDuration: 350,
+};
+
+// browser-tastenkombinationen mit STRG, die im spiel gesperrt werden (z.b. STRG+S, STRG+P, STRG+D)
+export const BROWSER_SHORTCUTS = {
+    allowedKeys: ["r", "i", "j", "c"],   // bleiben erlaubt: neu laden (STRG+R) und entwicklertools (STRG+SHIFT+I/J/C)
+    confirmLeave: true,                  // fragt vor dem schließen/verlassen der seite nach (schützt vor STRG+W)
+};
+
+// anzeige für den minen-cooldown (unten links)
+export const MINE_HUD = {
+    x: 16,
+    width: 200,
+    height: 44,
+    bottomMargin: 16,
+    barHeight: 8,
+    padding: 10,
+    fontSize: 14,
+    readyColor: 0x33dd33,
+    cooldownColor: 0xff9900,
 };
 
 // schaden, wenn das eigene auto gegen ein hindernis fährt (kleiner teil der lebenspunkte)
@@ -147,7 +195,7 @@ export const OBSTACLE_DAMAGE = {
 };
 
 export const HEALTH_BAR = {
-    points: 5,                // maximale lebenspunkte
+    points: HEALTH_BAR_POINTS, // lebenspunkte eines normalen autos
     width: 70,                // balken bei voller gesundheit
     height: 8,
     border: 1,                // dunkler rand um den balken

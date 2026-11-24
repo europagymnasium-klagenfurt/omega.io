@@ -3,7 +3,8 @@
 import { EVENTS } from "../shared/events.js";
 import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, playerDied, playerLeft, scheduleRespawn } from "./rounds.js";
 import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
+import { tryPlaceMine, removeMine, findTriggeredMine, getAllMines, getCooldownLeft, forgetPlayer } from "./mines.js";
+import { SPEED_BOOST, MACHINE_GUN, MINE, REPAIR_KIT, OBSTACLE_DAMAGE, getVehicleStats } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
@@ -38,6 +39,8 @@ export function setupNetwork(io) {
                 id: id,
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
+                mines: getAllMines(),
+                mineCooldownLeft: getCooldownLeft(id, Date.now()),
                 round: getRoundInfo(),
                 repairClaimed: repairClaimed,
             });
@@ -51,7 +54,27 @@ export function setupNetwork(io) {
             const player = updatePlayer(id, data);
             if (player) {
                 socket.broadcast.emit(EVENTS.PLAYER_MOVED, { id: id, x: player.x, y: player.y, angle: player.angle });
+
+                // fährt der spieler auf eine fremde mine, explodiert sie
+                const mine = findTriggeredMine(player);
+                if (mine) {
+                    removeMine(mine.id);
+                    io.emit(EVENTS.MINE_REMOVED, { id: mine.id, exploded: true });
+                    damagePlayer(player.id, MINE.damage);
+                    io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health, maxHealth: player.maxHealth });
+                }
             }
+        });
+
+        // mine legen (cooldown und position prüft der server)
+        socket.on(EVENTS.MINE_PLACE, () => {
+            const player = getPlayer(id);
+            if (!player) return;
+
+            const mine = tryPlaceMine(player, Date.now(), (expired) => {
+                io.emit(EVENTS.MINE_REMOVED, { id: expired.id, exploded: false });
+            });
+            if (mine) io.emit(EVENTS.MINE_PLACED, mine);
         });
 
         socket.on(EVENTS.BOOST_PICKUP, () => {
@@ -80,7 +103,7 @@ export function setupNetwork(io) {
             const spot = REPAIR_KIT.positions[index];
             const player = getPlayer(id);
             const valid = spot && !repairClaimed[index] && player
-                && player.health > 0 && player.health < HEALTH_BAR.points
+                && player.health > 0 && player.health < player.maxHealth
                 && Math.hypot(player.x - spot.x, player.y - spot.y) <= REPAIR_KIT.pickupRadius;
             if (!valid) {
                 socket.emit(EVENTS.REPAIR_REJECTED, { index: index });
@@ -89,7 +112,7 @@ export function setupNetwork(io) {
 
             repairClaimed[index] = true;
             healPlayer(id, REPAIR_KIT.heal);
-            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health, maxHealth: player.maxHealth });
             io.emit(EVENTS.REPAIR_TAKEN, { index: index });
             setTimeout(() => {
                 repairClaimed[index] = false;
@@ -112,17 +135,18 @@ export function setupNetwork(io) {
             const target = getPlayer(data.targetId);
             if (!isRunning() || !shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
 
-            // nicht öfter treffen als geschossen werden kann
+            // nicht öfter treffen als geschossen werden kann (je nach fahrzeug unterschiedlich schnell)
+            const stats = getVehicleStats(shooter.vehicleKey);
             const now = Date.now();
-            if (now - lastHitTime < MACHINE_GUN.fireRate / 2) return;
+            if (now - lastHitTime < MACHINE_GUN.fireRate * stats.fireRate / 2) return;
 
             // ziel muss in schussweite sein
             const distance = Math.hypot(shooter.x - target.x, shooter.y - target.y);
             if (distance > MACHINE_GUN.range + MACHINE_GUN.hitTolerance) return;
 
             lastHitTime = now;
-            damagePlayer(target.id, MACHINE_GUN.damage);
-            io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
+            damagePlayer(target.id, MACHINE_GUN.damage * stats.damage);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health, maxHealth: target.maxHealth });
 
             // keine lebenspunkte mehr: abschuss verbuchen und allen melden
             if (target.health <= 0) {
@@ -154,7 +178,7 @@ export function setupNetwork(io) {
 
             lastObstacleHitTime = now;
             damagePlayer(id, OBSTACLE_DAMAGE.damage);
-            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health, maxHealth: player.maxHealth });
 
             // am hindernis zerstört: als tod zählen (ohne gegner), im killfeed steht der name dann zweimal
             if (player.health <= 0) {
@@ -178,6 +202,7 @@ export function setupNetwork(io) {
 
         socket.on("disconnect", () => {
             console.log("user disconnected " + id);
+            forgetPlayer(id);
             if (getPlayer(id)) {
                 socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
                 removePlayer(id);

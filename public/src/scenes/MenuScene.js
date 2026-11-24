@@ -1,4 +1,4 @@
-import { PLAYER_NAME, VIEW_WIDTH, VIEW_HEIGHT } from "../config.js";
+import { GARAGES, PLAYER_NAME, VIEW_WIDTH, VIEW_HEIGHT } from "../config.js";
 import { VEHICLE_CATEGORIES } from "/shared/vehicles.js";
 
 const CATEGORY_COLORS = [0xff765e, 0x9bdc4a, 0x55d7e5];
@@ -14,6 +14,7 @@ export class MenuScene extends Phaser.Scene {
         this.vehicleIndex = 0;
         this.transitioning = false;
         this.vehicleChangeUsed = Boolean(data?.vehicleChangeUsed);
+        this.fromGarage = Boolean(data?.fromGarage);
         this.playerName = localStorage.getItem(PLAYER_NAME.storageKey)
             ?.slice(0, PLAYER_NAME.maxLength) ?? "";
         this.nameInputFocused = false;
@@ -95,6 +96,8 @@ export class MenuScene extends Phaser.Scene {
             }).setOrigin(0.5);
         }
 
+        if (this.fromGarage) this.startGarageCountdown();
+
         this.playButton = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT - 45, 300, 58, CATEGORY_COLORS[0])
             .setInteractive({ useHandCursor: true });
         this.add.text(VIEW_WIDTH / 2, VIEW_HEIGHT - 45, "INS SPIEL", {
@@ -109,6 +112,26 @@ export class MenuScene extends Phaser.Scene {
 
         this.renderCategories();
         this.renderVehicles();
+    }
+
+    // in der garage hat man nur begrenzt zeit, danach geht es automatisch weiter
+    startGarageCountdown() {
+        const deadline = Date.now() + GARAGES.maxStay;
+        const text = this.add.text(VIEW_WIDTH / 2, 130, "", {
+            color: "#ffd27a",
+            fontFamily: "monospace",
+            fontSize: "26px",
+            fontStyle: "bold",
+        }).setOrigin(0.5).setDepth(5);
+
+        const tick = () => {
+            const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+            text.setText(`NOCH ${seconds} SEKUNDEN`);
+            text.setColor(seconds <= 3 ? "#ff5a4a" : "#ffd27a");
+            if (seconds <= 0) this.startGame();
+        };
+        tick();
+        this.time.addEvent({ delay: 200, loop: true, callback: tick });
     }
 
     renderCategories() {
@@ -275,6 +298,7 @@ export class MenuScene extends Phaser.Scene {
         localStorage.setItem(PLAYER_NAME.storageKey, this.playerName);
         this.transitioning = true;
         this.playButton.disableInteractive();
+        if (this.fromGarage) this.registry.set("garageReadyAt", Date.now() + GARAGES.cooldown);
 
         const garageExitCar = this.add.image(this.previewVehicle?.x ?? VIEW_WIDTH / 2, this.previewVehicle?.y ?? 380, vehicle.key);
         garageExitCar.setScale(this.previewVehicle?.scaleX ?? 1, this.previewVehicle?.scaleY ?? 1);
@@ -308,6 +332,7 @@ export class MenuScene extends Phaser.Scene {
                     vehicleKey: vehicle.key,
                     vehicleChangeUsed: this.vehicleChangeUsed,
                     playerName: this.playerName,
+                    fromGarage: this.fromGarage,
                 });
             },
         });

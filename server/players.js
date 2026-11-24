@@ -1,7 +1,7 @@
 // verwaltet alle spieler am server (nur daten, kein socket-code)
 
 import { DEFAULT_VEHICLE_KEY, getVehicle } from "../shared/vehicles.js";
-import { HEALTH_BAR, ARMOR, PLAYER_NAME, SPAWN_SHIELD } from "../public/src/config.js";
+import { getVehicleStats, PLAYER_NAME, OBSTACLES, SPAWN_SHIELD } from "../public/src/config.js";
 
 const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
 
@@ -29,8 +29,12 @@ export function addPlayer(id, requestedName) {
         angle: 0,
         vehicleKey: DEFAULT_VEHICLE_KEY,
         color: color,
-        health: HEALTH_BAR.points,
-        armor: ARMOR.default,
+        health: getVehicleStats(DEFAULT_VEHICLE_KEY).health,
+        maxHealth: getVehicleStats(DEFAULT_VEHICLE_KEY).health,
+        kills: 0,
+        deaths: 0,
+        roundKills: 0,   // abschüsse in der aktuellen runde (entscheidet den sieger)
+        alive: true,   // false = ausgeschieden, bis zum neustart
         spawnProtectedUntil: Date.now() + SPAWN_SHIELD.duration,
     };
     return players[id];
@@ -42,14 +46,63 @@ export function isSpawnProtected(id) {
     return Boolean(player && Date.now() < player.spawnProtectedUntil);
 }
 
-// lebenspunkte abziehen, die panzerung verringert den schaden (damage / armor).
+// lebenspunkte abziehen.
 // auf 3 kommastellen runden, sonst wird aus 5 - 0.1 - 0.1 ... z.b. 4.199999
 export function damagePlayer(id, damage) {
     const player = players[id];
     if (!player) return null;
 
-    const health = player.health - damage / player.armor;
+    const health = player.health - damage;
     player.health = Math.max(0, Math.round(health * 1000) / 1000);
+    return player;
+}
+
+// abschuss verbuchen: der schütze bekommt einen kill, das opfer einen tod
+export function recordKill(killerId, victimId) {
+    const killer = players[killerId];
+    const victim = players[victimId];
+    if (!killer || !victim) return null;
+
+    killer.kills += 1;
+    killer.roundKills += 1;
+    victim.deaths += 1;
+    victim.alive = false;
+    return { killer, victim };
+}
+
+// zerstörtes auto neu starten: volle lebenspunkte, zufälliger startplatz aus der freien startreihe
+// (dort stehen garantiert keine hindernisse, siehe OBSTACLES.spawn)
+export function respawnPlayer(id, slot = Math.floor(Math.random() * OBSTACLES.spawn.count)) {
+    const player = players[id];
+    if (!player) return null;
+
+    const spawn = OBSTACLES.spawn;
+    player.x = spawn.x + (slot % spawn.count) * spawn.spacing;
+    player.y = spawn.y;
+    player.angle = 0;
+    player.health = player.maxHealth;
+    player.alive = true;
+    player.spawnProtectedUntil = Date.now() + SPAWN_SHIELD.duration;
+    return player;
+}
+
+// spieler, der mitten in einer runde dazukommt: sieht zu, bis er neu startet
+export function setSpectator(id) {
+    const player = players[id];
+    if (!player) return null;
+
+    player.alive = false;
+    player.health = 0;
+    return player;
+}
+
+// lebenspunkte zurückgeben (höchstens bis zum maximum), gerundet wie beim schaden
+export function healPlayer(id, amount) {
+    const player = players[id];
+    if (!player) return null;
+
+    const health = Math.min(player.maxHealth, player.health + amount);
+    player.health = Math.round(health * 1000) / 1000;
     return player;
 }
 
@@ -62,7 +115,11 @@ export function setPlayerVehicle(id, vehicleKey) {
     if (!player) return null;
 
     player.vehicleKey = getVehicle(vehicleKey).key;
-    player.armor = ARMOR[player.vehicleKey] ?? ARMOR.default;
+
+    // maximale lebenspunkte des fahrzeugs, der anteil an lebenspunkten bleibt gleich
+    const maxHealth = getVehicleStats(player.vehicleKey).health;
+    player.health = Math.round(player.health / player.maxHealth * maxHealth * 1000) / 1000;
+    player.maxHealth = maxHealth;
     return player;
 }
 

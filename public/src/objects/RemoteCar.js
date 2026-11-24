@@ -1,6 +1,6 @@
 // auto eines anderen spielers. hat keine eigene physik, die position kommt vom server.
 
-import { CAR } from "../config.js";
+import { CAR, getVehicleStats } from "../config.js";
 import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
 import { HealthBar } from "./HealthBar.js";
 import { SpawnShield } from "./SpawnShield.js";
@@ -20,7 +20,13 @@ export class RemoteCar extends Phaser.Physics.Arcade.Sprite {
 
         this.spawnShield = null;
         const shieldRemaining = player.spawnProtectedUntil ? player.spawnProtectedUntil - Date.now() : 0;
-        if (shieldRemaining > 0) this.spawnShield = new SpawnShield(scene, this, shieldRemaining);
+        if (shieldRemaining > 0) this.activateSpawnShield(shieldRemaining);
+    }
+
+    // spawnschutz-blase für die angegebene zeit anzeigen (vom server ebenfalls durchgesetzt)
+    activateSpawnShield(durationMs) {
+        this.spawnShield?.destroy();
+        this.spawnShield = new SpawnShield(this.scene, this, durationMs);
     }
 
     setVehicle(vehicleKey) {
@@ -31,6 +37,7 @@ export class RemoteCar extends Phaser.Physics.Arcade.Sprite {
         const offsetX = (this.width - radius * 2) / 2;
         const offsetY = (this.height - radius * 2) / 2;
         this.setCircle(radius, offsetX, offsetY);
+        this.healthBar?.setMaxHealth(getVehicleStats(this.texture.key).health);
     }
 
     preUpdate(time, delta) {

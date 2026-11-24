@@ -4,8 +4,9 @@
 // der server zieht die lebenspunkte ab und schickt HEALTH_CHANGED an alle (siehe PlayerHealth).
 
 import { socket, EVENTS } from "../network.js";
-import { MACHINE_GUN } from "../config.js";
+import { MACHINE_GUN, getVehicleStats } from "../config.js";
 import { Bullet } from "../objects/Bullet.js";
+import { getWorldShape, shapeContains } from "./HitboxShapes.js";
 
 export class MachineGun {
     constructor(scene, car, multiplayer, playerHealth) {
@@ -32,7 +33,7 @@ export class MachineGun {
 
         const firing = this.scene.input.activePointer.leftButtonDown() && this.playerHealth.isAlive();
         if (!firing || time < this.nextShotTime) return;
-        this.nextShotTime = time + MACHINE_GUN.fireRate;
+        this.nextShotTime = time + MACHINE_GUN.fireRate * getVehicleStats(this.car.texture.key).fireRate;
 
         const angle = this.car.rotation - Math.PI / 2;   // das bild zeigt nach oben, phaser rechnet ab "rechts"
         const distance = this.car.displayHeight / 2 + MACHINE_GUN.muzzleOffset;
@@ -48,21 +49,24 @@ export class MachineGun {
     }
 
     checkHits() {
+        const bullets = this.bullets.getChildren().slice();
+
         // fremde schüsse, die das eigene auto treffen, nur verschwinden lassen.
-        // den treffer meldet der schütze selbst.
-        this.scene.physics.overlap(this.car, this.bullets, (a, b) => {
-            const bullet = a instanceof Bullet ? a : b;
-            if (bullet.ownerId !== null) bullet.destroy();
-        });
+        // den treffer meldet der schütze selbst. ein treffer = der schuss liegt im umriss des autos.
+        const carShape = getWorldShape(this.car);
+        for (const bullet of bullets) {
+            if (bullet.ownerId !== null && shapeContains(carShape, bullet.x, bullet.y)) bullet.destroy();
+        }
 
         for (const remoteCar of Object.values(this.multiplayer.remoteCars)) {
-            this.scene.physics.overlap(remoteCar, this.bullets, (a, b) => {
-                const bullet = a instanceof Bullet ? a : b;
-                if (bullet.ownerId === remoteCar.playerId) return;   // eigenes auto trifft man nicht
+            const shape = getWorldShape(remoteCar);
+            for (const bullet of bullets) {
+                if (!bullet.active || !shapeContains(shape, bullet.x, bullet.y)) continue;
+                if (bullet.ownerId === remoteCar.playerId) continue;   // eigenes auto trifft man nicht
 
                 if (bullet.ownerId === null) socket.emit(EVENTS.HIT, { targetId: remoteCar.playerId });
                 bullet.destroy();
-            });
+            }
         }
     }
 

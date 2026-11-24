@@ -2,10 +2,28 @@
 
 export const VIEW_WIDTH = 1200;
 export const VIEW_HEIGHT = 800;
-export const WORLD_WIDTH = VIEW_WIDTH * 2;
-export const WORLD_HEIGHT = VIEW_HEIGHT * 2;
+export const WORLD_SIZE_FACTOR = 3;   // wie viele bildschirme breit/hoch die welt ist
+export const WORLD_WIDTH = VIEW_WIDTH * WORLD_SIZE_FACTOR;
+export const WORLD_HEIGHT = VIEW_HEIGHT * WORLD_SIZE_FACTOR;
 
-export const DEBUG = false;  // zeigt die hitboxen an
+const HEALTH_BAR_POINTS = 5;   // normale lebenspunkte (HEALTH_BAR.points)
+
+export const DEBUG = false;  // zeigt die hitboxen von anfang an (im spiel mit der taste unten umschaltbar)
+
+// hitboxen folgen der umrisslinie der bilder (siehe systems/HitboxShapes.js)
+export const HITBOX = {
+    toggleKey: "H",          // taste zum ein- und ausblenden der hitboxen
+    alphaThreshold: 64,      // ab diesem alpha-wert (0-255) zählt ein bildpunkt als sichtbar
+    maskResolution: 400,     // so viele zellen (längste bildseite) werden für den umriss ausgewertet
+    tolerance: 0.7,          // wie stark der umriss vereinfacht wird (welt-pixel)
+    pointSpacing: 4,         // höchstens so viele welt-pixel zwischen zwei umriss-punkten
+    minPartArea: 0.01,       // kleine einzelteile unter diesem anteil der größten fläche werden ignoriert
+    minDepth: 0.05,          // berührungen unter dieser tiefe (welt-pixel) zählen nicht (nur kante an kante)
+    maxPush: 40,             // so weit wird ein auto pro frame höchstens aus einer berührung geschoben
+    debugDepth: 2000,
+    debugLineWidth: 2,
+    colors: { car: 0xff00ff, remoteCar: 0xff8800, obstacle: 0x00b4ff, pickup: 0x00ff66 },
+};
 
 export const CAR = {
     rotationSpeed: 150,   // grad pro sekunde
@@ -84,18 +102,45 @@ export const SPEED_BOOST = {
 
 export const OBSTACLES = {
     seed: 482731,
-    count: 20,
+    count: 40,              // so viele hindernisse (höchstens gridColumns * gridRows)
+    gridColumns: 8,         // die welt wird in felder geteilt, pro feld höchstens ein hindernis
+    gridRows: 6,
     attemptsPerObstacle: 80,
     edgeMargin: 140,
     spacing: 80,
     spawn: { x: 400, y: 300, spacing: 100, count: 8, safeRadius: 150 },
     boostSafeRadius: 180,
     types: [
-        { key: "obstacle-tire", asset: "tires.png", width: 142, height: 142, bodyWidth: 132, bodyHeight: 132, weight: 5 },
-        { key: "obstacle-rubble", asset: "house.png", width: 150, height: 150, bodyWidth: 140, bodyHeight: 140, weight: 4 },
-        { key: "obstacle-wreck", asset: "brokencar.png", width: 132, height: 132, bodyWidth: 66, bodyHeight: 124, weight: 3 },
-        { key: "obstacle-wall", asset: "wall.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
-        { key: "obstacle-wall-top", asset: "wall from above.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
+        { key: "obstacle-tire", asset: "tires.png", width: 142, height: 142, weight: 5 },
+        { key: "obstacle-rubble", asset: "house.png", width: 150, height: 150, weight: 4 },
+        { key: "obstacle-wreck", asset: "brokencar.png", width: 132, height: 132, weight: 3 },
+        { key: "obstacle-wall", asset: "wall.png", width: 260, height: 108, weight: 2 },
+        { key: "obstacle-wall-top", asset: "wall from above.png", width: 260, height: 108, weight: 2 },
+    ],
+};
+
+// garagen in der welt: einfahren = fahrzeug wechseln (leben bleiben gleich)
+export const GARAGES = {
+    width: 240,
+    height: 170,
+    wallThickness: 28,       // hitbox oben und unten: so wird die garage zum tunnel (seitlich offen)
+    enterRatio: 0.55,        // so weit muss das auto drin sein (anteil der garagengröße)
+    maxStay: 10000,          // ms: so lange darf man höchstens in der garage bleiben
+    cooldown: 60000,         // ms: so lange sind die garagen danach gesperrt
+    enterDelay: 250,         // ms überblendung, bevor das menü kommt
+    safeMargin: 120,         // abstand zu hindernissen
+    labelFontSize: 26,
+    labelColor: "#ffd27a",   // neon-schrift
+    labelGlow: 0xff9a2e,
+    labelGap: 26,            // abstand des schilds über dem dach
+    doorWidth: 170,
+    doorHeight: 18,
+    list: [
+        { name: "GARAGE NORD", x: 1900, y: 330 },
+        { name: "GARAGE NORDOST", x: 3250, y: 420 },
+        { name: "GARAGE WEST", x: 340, y: 1200 },
+        { name: "GARAGE SÜDWEST", x: 1000, y: 2050 },
+        { name: "GARAGE SÜDOST", x: 2800, y: 2000 },
     ],
 };
 
@@ -117,17 +162,69 @@ export const MACHINE_GUN = {
     hitTolerance: 150,    // server: treffer gilt nur, wenn ziel höchstens range + das entfernt ist
 };
 
-// panzerung pro fahrzeug: abgezogen wird damage / armor.
-// armor 2 = halber schaden = hält doppelt so viel aus. fahrzeuge ohne eintrag haben "default".
-export const ARMOR = {
-    default: 1,
-    "monster-croc": 2,
-    "monster-shark": 2,
-    "monster-face": 2,
+// werte pro fahrzeug (issue #18). fahrzeuge ohne eintrag haben "default".
+//   speed:    faktor auf CAR.speed
+//   health:   maximale lebenspunkte (der lebensbalken zeigt health / max)
+//   damage:   faktor auf MACHINE_GUN.damage (schaden an anderen autos)
+//   fireRate: faktor auf MACHINE_GUN.fireRate (kleiner = schießt schneller)
+const SPORT = { speed: 1.3, health: 3, damage: 0.6, fireRate: 0.6 };      // schnell, schwach, schießt schnell
+const MONSTER = { speed: 0.7, health: 8, damage: 1.6, fireRate: 2.2 };   // langsam, zäh, viel schaden, schießt deutlich langsamer
+export const VEHICLE_STATS = {
+    default: { speed: 1, health: HEALTH_BAR_POINTS, damage: 1, fireRate: 1 },
+    "sport-formula": SPORT,
+    "sport-hyundai": SPORT,
+    "sport-blue": SPORT,
+    "monster-croc": MONSTER,
+    "monster-shark": MONSTER,
+    "monster-face": MONSTER,
+    "fictional-delorean": { speed: 1.3, health: HEALTH_BAR_POINTS, damage: 1, fireRate: 1 },    // schnell, sonst normal
+    "fictional-gtr": { speed: 1.3, health: HEALTH_BAR_POINTS, damage: 1.3, fireRate: 1 },       // schnell, guter schaden
+    "fictional-kart": { speed: 1.15, health: 6, damage: 1.2, fireRate: 0.85 },                  // kann alles gut
+};
+
+export function getVehicleStats(vehicleKey) {
+    return VEHICLE_STATS[vehicleKey] ?? VEHICLE_STATS.default;
+}
+
+// minen: mit STRG legt man hinter dem auto eine mine ab (der server rechnet alles)
+export const MINE = {
+    cooldown: 20000,          // millisekunden, bis man die nächste mine legen darf
+    lifetime: 10000,          // millisekunden, dann verschwindet die mine von selbst
+    dropOffset: 90,           // abstand hinter dem auto, wo die mine liegt
+    triggerRadius: 45,        // so nah muss ein anderes auto kommen, damit sie explodiert
+    damage: 2,                // lebenspunkte, die eine explosion kostet
+    size: 40,                 // durchmesser der mine
+    explosionScale: 3,        // so groß wird die explosion (mal size)
+    explosionDuration: 350,
+};
+
+// browser-tastenkombinationen mit STRG, die im spiel gesperrt werden (z.b. STRG+S, STRG+P, STRG+D)
+export const BROWSER_SHORTCUTS = {
+    allowedKeys: ["r", "i", "j", "c"],   // bleiben erlaubt: neu laden (STRG+R) und entwicklertools (STRG+SHIFT+I/J/C)
+    confirmLeave: true,                  // fragt vor dem schließen/verlassen der seite nach (schützt vor STRG+W)
+};
+
+// anzeige für den minen-cooldown (unten links)
+export const MINE_HUD = {
+    x: 16,
+    width: 200,
+    height: 44,
+    bottomMargin: 16,
+    barHeight: 8,
+    padding: 10,
+    fontSize: 14,
+    readyColor: 0x33dd33,
+    cooldownColor: 0xff9900,
+};
+
+// schaden, wenn das eigene auto gegen ein hindernis fährt (kleiner teil der lebenspunkte)
+export const OBSTACLE_DAMAGE = {
+    damage: 0.2,          // lebenspunkte pro aufprall (bei armor 1)
+    cooldown: 800,        // millisekunden, bis wieder schaden möglich ist (sonst zählt jeder frame)
 };
 
 export const HEALTH_BAR = {
-    points: 5,                // maximale lebenspunkte
+    points: HEALTH_BAR_POINTS, // lebenspunkte eines normalen autos
     width: 70,                // balken bei voller gesundheit
     height: 8,
     border: 1,                // dunkler rand um den balken
@@ -172,4 +269,109 @@ export const PLAYER_NAME = {
     fieldHeight: 38,
     labelY: 39,
     fontSize: 14,
+};
+
+export const MINIMAP = {
+    width: 270,                 // breite der karte (höhe folgt dem seitenverhältnis der welt)
+    margin: 16,                 // abstand zum rechten und unteren bildrand
+    toggleKey: "M",             // taste zum ein- und ausblenden
+    depth: 100,
+    cornerRadius: 10,
+    backgroundColor: 0x0b1118,
+    backgroundAlpha: 0.82,
+    borderColor: 0x4ec9f5,
+    gridColor: 0x4ec9f5,
+    gridAlpha: 0.12,
+    gridLines: 6,               // linien pro achse
+    obstacleColor: 0x7f8c9b,
+    obstacleAlpha: 0.9,
+    viewColor: 0xffffff,        // rahmen, der den sichtbaren ausschnitt zeigt
+    viewAlpha: 0.35,
+    boostColor: 0xffd166,
+    boostRadius: 5,
+    remoteDotRadius: 3.5,
+    ownArrowSize: 7,
+    ownColor: 0xffffff,
+    pulseSpeed: 260,            // millisekunden pro puls-schwingung
+    pulseRadius: 6,             // wie weit der ring um das eigene auto wächst
+    titleFontSize: 10,
+};
+
+export const SCOREBOARD = {
+    key: "TAB",                // gedrückt halten zeigt die rangliste
+    width: 460,
+    padding: 18,
+    titleHeight: 44,
+    rowHeight: 28,
+    fontSize: 18,
+    depth: 200,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.92,
+    borderColor: 0x4ec9f5,
+};
+
+export const KILLFEED = {
+    x: 16,
+    y: 44,                 // unter der ping-anzeige
+    maxLines: 5,
+    lineHeight: 26,
+    showTime: 5000,        // so lange bleibt eine zeile stehen (ms)
+    fadeTime: 600,
+    fontSize: 16,
+    depth: 150,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.75,
+    padding: 6,
+};
+
+export const RESPAWN = {
+    delay: 3000,            // so lange (ms) bleibt ein zerstörtes auto weg, bis es neu startet
+    messageFontSize: 44,
+    messageY: VIEW_HEIGHT / 3,
+    depth: 300,
+};
+
+// runden: läuft bis nur noch einer lebt oder die zeit abläuft, danach pause und neue runde
+export const ROUND = {
+    duration: 5 * 60 * 1000,   // ms: längste dauer einer runde
+    intermission: 8000,        // ms: pause nach einer runde
+    minPlayers: 2,             // so viele spieler braucht es für eine runde
+    respawnDelay: 30000,       // ms: so lange sieht ein ausgeschiedener spieler zu, dann startet er wieder
+    hudY: 14,
+    hudFontSize: 22,
+    bannerY: 120,
+    bannerFontSize: 46,
+    hintY: VIEW_HEIGHT - 70,
+    hintFontSize: 22,
+    depth: 250,
+};
+
+export const REPAIR_KIT = {
+    positions: [
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.75 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.75 },
+    ],
+    size: 56,
+    pickupRadius: 70,       // server: so nah muss das auto am kit sein
+    clientFactor: 0.7,      // client fragt erst bei diesem teil des radius an (sicherheitsabstand zur server-position)
+    heal: 2,                // so viele lebenspunkte gibt ein kit zurück
+    respawnDelay: 20000,    // so lange (ms) ist ein eingesammeltes kit weg
+    retryDelay: 300,        // nach einer ablehnung so lange (ms) nicht erneut anfragen
+    safeRadius: 120,        // so weit halten die hindernisse abstand
+    color: 0xffffff,
+    crossColor: 0xe53935,
+    depth: 3,
+};
+
+export const HIT_FEEDBACK = {
+    flashColor: 0xff0000,
+    flashAlpha: 0.28,         // stärke des roten aufblitzens
+    flashDuration: 220,
+    shakeDuration: 120,
+    shakeIntensity: 0.004,
+    deathShakeDuration: 400,  // beim zerstört werden wackelt es länger und stärker
+    deathShakeIntensity: 0.012,
+    depth: 250,
 };

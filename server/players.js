@@ -33,6 +33,7 @@ export function addPlayer(id, requestedName) {
         armor: ARMOR.default,
         kills: 0,
         deaths: 0,
+        alive: true,   // false = ausgeschieden, bis die nächste runde beginnt
     };
     return players[id];
 }
@@ -56,21 +57,32 @@ export function recordKill(killerId, victimId) {
 
     killer.kills += 1;
     victim.deaths += 1;
+    victim.alive = false;
     return { killer, victim };
 }
 
 // zerstörtes auto neu starten: volle lebenspunkte, zufälliger startplatz aus der freien startreihe
 // (dort stehen garantiert keine hindernisse, siehe OBSTACLES.spawn)
-export function respawnPlayer(id) {
+export function respawnPlayer(id, slot = Math.floor(Math.random() * OBSTACLES.spawn.count)) {
     const player = players[id];
     if (!player) return null;
 
     const spawn = OBSTACLES.spawn;
-    const slot = Math.floor(Math.random() * spawn.count);
-    player.x = spawn.x + slot * spawn.spacing;
+    player.x = spawn.x + (slot % spawn.count) * spawn.spacing;
     player.y = spawn.y;
     player.angle = 0;
     player.health = HEALTH_BAR.points;
+    player.alive = true;
+    return player;
+}
+
+// spieler, der mitten in einer runde dazukommt: sieht zu, bis die nächste runde beginnt
+export function setSpectator(id) {
+    const player = players[id];
+    if (!player) return null;
+
+    player.alive = false;
+    player.health = 0;
     return player;
 }
 

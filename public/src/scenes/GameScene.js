@@ -17,6 +17,8 @@ import { ObstacleField } from "../systems/ObstacleField.js";
 import { Minimap } from "../systems/Minimap.js";
 import { Scoreboard } from "../systems/Scoreboard.js";
 import { KillFeed } from "../systems/KillFeed.js";
+import { RoundHud } from "../systems/RoundHud.js";
+import { Spectator } from "../systems/Spectator.js";
 import { Respawn } from "../systems/Respawn.js";
 
 export class GameScene extends Phaser.Scene {
@@ -164,6 +166,8 @@ export class GameScene extends Phaser.Scene {
         this.scoreboard = new Scoreboard(this);
         this.killFeed = new KillFeed(this);
         this.respawn = new Respawn(this, this.car, this.multiplayer);
+        this.roundHud = new RoundHud(this);
+        this.spectator = new Spectator(this, this.car, this.multiplayer);
     }
 
     update(time, delta) {
@@ -183,6 +187,7 @@ export class GameScene extends Phaser.Scene {
         this.minimap.update(time);
         this.scoreboard.update();
         this.respawn.update();
+        this.roundHud.update();
     }
 
     getMovementInput() {

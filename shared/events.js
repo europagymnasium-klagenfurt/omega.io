@@ -23,5 +23,8 @@ export const EVENTS = {
     SHOT_FIRED: "shotFired",         // {id, x, y, vx, vy} schuss eines anderen spielers
     HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
     PLAYER_RESPAWNED: "playerRespawned", // {id, x, y, angle, health} zerstörtes auto ist wieder da
+    ROUND_STARTED: "roundStarted",   // {round, remaining} neue runde läuft, alle starten neu
+    ROUND_ENDED: "roundEnded",       // {winnerId, winnerName, winnerColor, reason, intermission} runde vorbei
+    ROUND_WAITING: "roundWaiting",   // zu wenig spieler für eine runde
     PLAYER_KILLED: "playerKilled",   // {killerId, killerName, killerColor, killerKills, victimId, victimName, victimColor, victimDeaths}
 };

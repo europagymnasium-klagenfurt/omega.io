@@ -1,4 +1,4 @@
-// neustart nach dem tod: zeigt einen countdown und setzt das auto auf die position, die der server schickt.
+// neustart nach dem tod (jetzt zu beginn jeder runde): zeigt "zerstört" und setzt das auto auf die position, die der server schickt.
 // die lebenspunkte (und damit "wieder am leben") kommen über HEALTH_CHANGED, siehe PlayerHealth.
 
 import { socket, EVENTS } from "../network.js";
@@ -32,8 +32,7 @@ export class Respawn {
 
     onKilled(data) {
         if (data.victimId !== this.multiplayer.playerId) return;
-        this.respawnAt = this.scene.time.now + RESPAWN.delay;
-        this.message.setVisible(true);
+        this.message.setText("ZERSTÖRT").setVisible(true);   // neustart gibt es erst mit der nächsten runde
     }
 
     onRespawned(data) {
@@ -48,11 +47,7 @@ export class Respawn {
     }
 
     // wird jeden frame von der scene aufgerufen
-    update() {
-        if (this.respawnAt === null) return;
-        const seconds = Math.max(1, Math.ceil((this.respawnAt - this.scene.time.now) / 1000));
-        this.message.setText(`ZERSTÖRT\nNeustart in ${seconds}`);
-    }
+    update() {}
 
     destroy() {
         for (const [event, handler] of Object.entries(this.handlers)) {

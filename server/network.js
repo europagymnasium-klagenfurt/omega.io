@@ -9,6 +9,12 @@ let boostPickupClaimed = false;
 let boostRespawnTimer = null;
 const repairClaimed = REPAIR_KIT.positions.map(() => false);   // ist das kit gerade eingesammelt?
 
+// daten vom client sind nicht vertrauenswürdig: alles, was kein objekt ist, wird zu {}
+// (sonst kann eine kaputte nachricht den ganzen server abstürzen lassen)
+function asObject(data) {
+    return data && typeof data === "object" ? data : {};
+}
+
 export function setupNetwork(io) {
     setupRounds(io);
 
@@ -17,7 +23,8 @@ export function setupNetwork(io) {
 
         const id = socket.id;
 
-        socket.on(EVENTS.READY, (data = {}) => {
+        socket.on(EVENTS.READY, (raw) => {
+            const data = asObject(raw);
             const isNew = !getPlayer(id);
             if (isNew) {
                 addPlayer(id, data.name);
@@ -35,7 +42,9 @@ export function setupNetwork(io) {
             if (isNew) onPlayerJoined();
         });
 
-        socket.on(EVENTS.UPDATE, (data) => {
+        socket.on(EVENTS.UPDATE, (raw) => {
+            const data = asObject(raw);
+            if (![data.x, data.y, data.angle].every(Number.isFinite)) return;
             const player = updatePlayer(id, data);
             if (player) {
                 socket.broadcast.emit(EVENTS.PLAYER_MOVED, { id: id, x: player.x, y: player.y, angle: player.angle });
@@ -62,7 +71,8 @@ export function setupNetwork(io) {
         });
 
         // reparatur-kit: server prüft abstand, lebenspunkte und ob das kit noch da ist
-        socket.on(EVENTS.REPAIR_PICKUP, (data = {}) => {
+        socket.on(EVENTS.REPAIR_PICKUP, (raw) => {
+            const data = asObject(raw);
             const index = data.index;
             const spot = REPAIR_KIT.positions[index];
             const player = getPlayer(id);
@@ -85,14 +95,16 @@ export function setupNetwork(io) {
         });
 
         // schuss an alle anderen weitergeben
-        socket.on(EVENTS.SHOOT, (data = {}) => {
+        socket.on(EVENTS.SHOOT, (raw) => {
+            const data = asObject(raw);
             if (!getPlayer(id)) return;
             socket.broadcast.emit(EVENTS.SHOT_FIRED, { id: id, x: data.x, y: data.y, vx: data.vx, vy: data.vy });
         });
 
         // treffer prüfen, lebenspunkte abziehen und allen die neuen werte schicken
         let lastHitTime = 0;
-        socket.on(EVENTS.HIT, (data = {}) => {
+        socket.on(EVENTS.HIT, (raw) => {
+            const data = asObject(raw);
             const shooter = getPlayer(id);
             const target = getPlayer(data.targetId);
             if (!isRunning() || !shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;

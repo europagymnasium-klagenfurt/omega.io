@@ -145,6 +145,7 @@ export class GameScene extends Phaser.Scene {
             }
             this.car.healthBar.graphics.setVisible(true);
             this.isIntroActive = false;
+            this.introPlayed = true;
             this.setupGameplay();
             this.time.delayedCall(
                 Math.max(0, SPAWN_INTRO.smokeLifespan - SPAWN_INTRO.fadeDuration),

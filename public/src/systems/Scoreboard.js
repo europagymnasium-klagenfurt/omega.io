@@ -18,6 +18,11 @@ export class Scoreboard {
         this.background.setStrokeStyle(2, SCOREBOARD.borderColor, 0.9);
         this.container.add(this.background);
 
+        // kleiner dauerhafter hinweis, damit man weiß, wie man die rangliste öffnet
+        this.hint = scene.add.text(VIEW_WIDTH / 2, VIEW_HEIGHT - SCOREBOARD.hintBottom, SCOREBOARD.hintText, {
+            color: "#ffffff", fontSize: "14px", fontStyle: "bold",
+        }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(SCOREBOARD.depth - 1).setAlpha(0.6);
+
         this.handlers = {
             [EVENTS.INIT]: (data) => this.onInit(data),
             [EVENTS.PLAYER_JOINED]: (player) => this.setPlayer(player),
@@ -79,17 +84,18 @@ export class Scoreboard {
     update() {
         const show = this.key.isDown;
         this.container.setVisible(show);
+        this.hint.setVisible(!show);
         if (show && this.dirty) this.rebuild();
     }
 
-    // liste neu aufbauen: meiste kills zuerst, bei gleichstand weniger tode zuerst
+    // liste neu aufbauen: meiste kills zuerst, dann weniger tode, dann mehr ausgeteilter schaden
     rebuild() {
         this.dirty = false;
         for (const row of this.rows) row.destroy();
         this.rows = [];
 
         const entries = Object.entries(this.players).sort(
-            ([, a], [, b]) => b.kills - a.kills || a.deaths - b.deaths,
+            ([, a], [, b]) => b.kills - a.kills || a.deaths - b.deaths || b.damageDealt - a.damageDealt,
         );
         const height = SCOREBOARD.titleHeight + SCOREBOARD.padding + entries.length * SCOREBOARD.rowHeight;
         this.background.setSize(SCOREBOARD.width, height);
@@ -99,7 +105,7 @@ export class Scoreboard {
         const top = -height / 2 + SCOREBOARD.padding;
         const small = `${SCOREBOARD.fontSize - 4}px`;
 
-        this.addText(left, top, "SPIELER", "#8ad8ff", small, 0);
+        this.addText(left + 30, top, "SPIELER", "#8ad8ff", small, 0);
         // zahlenspalten von rechts: erhalten, schaden, tode, kills
         const col = (n) => right - n * SCOREBOARD.columnWidth;
         this.addText(col(0), top, "ERHALTEN", "#8ad8ff", small, 1);
@@ -111,7 +117,15 @@ export class Scoreboard {
             const y = top + SCOREBOARD.titleHeight - SCOREBOARD.padding + index * SCOREBOARD.rowHeight;
             const color = `#${player.color.toString(16).padStart(6, "0")}`;
             const name = id === this.ownId ? `${player.name} (du)` : player.name;
-            this.addText(left, y, name, color, `${SCOREBOARD.fontSize}px`, 0);
+            if (id === this.ownId) {
+                // eigene zeile hervorheben
+                const highlight = this.scene.add.rectangle(0, y + SCOREBOARD.rowHeight / 2 - 4, SCOREBOARD.width - 8, SCOREBOARD.rowHeight,
+                    SCOREBOARD.ownRowColor, SCOREBOARD.ownRowAlpha);
+                this.container.addAt(highlight, 1);
+                this.rows.push(highlight);
+            }
+            this.addText(left, y, `${index + 1}.`, "#8ad8ff", `${SCOREBOARD.fontSize}px`, 0);
+            this.addText(left + 30, y, name, color, `${SCOREBOARD.fontSize}px`, 0);
             const size = `${SCOREBOARD.fontSize}px`;
             this.addText(col(0), y, player.damageTaken.toFixed(1), "#ff8a8a", size, 1);
             this.addText(col(1), y, player.damageDealt.toFixed(1), "#8aff8a", size, 1);
@@ -131,5 +145,6 @@ export class Scoreboard {
             socket.off(event, handler);
         }
         this.scene.input.keyboard?.removeKey(this.key);
+        this.hint.destroy();
     }
 }

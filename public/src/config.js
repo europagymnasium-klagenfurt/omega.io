@@ -231,6 +231,10 @@ export const SCOREBOARD = {
     key: "TAB",                // gedrückt halten zeigt die rangliste
     width: 640,
     columnWidth: 85,           // breite einer zahlenspalte (kills, tode, schaden, erhalten)
+    hintText: "TAB halten: Rangliste",   // dauerhafter hinweis am unteren bildrand
+    hintBottom: 14,            // abstand des hinweises vom unteren rand
+    ownRowColor: 0x4ec9f5,     // hintergrund der eigenen zeile
+    ownRowAlpha: 0.22,
     padding: 18,
     titleHeight: 44,
     rowHeight: 28,

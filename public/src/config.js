@@ -140,6 +140,12 @@ export const ARMOR = {
     "monster-face": 2,
 };
 
+// schaden, wenn das eigene auto gegen ein hindernis fährt (kleiner teil der lebenspunkte)
+export const OBSTACLE_DAMAGE = {
+    damage: 0.2,          // lebenspunkte pro aufprall (bei armor 1)
+    cooldown: 800,        // millisekunden, bis wieder schaden möglich ist (sonst zählt jeder frame)
+};
+
 export const HEALTH_BAR = {
     points: 5,                // maximale lebenspunkte
     width: 70,                // balken bei voller gesundheit
@@ -246,6 +252,20 @@ export const RESPAWN = {
     messageFontSize: 44,
     messageY: VIEW_HEIGHT / 3,
     depth: 300,
+};
+
+// runden: läuft bis nur noch einer lebt oder die zeit abläuft, danach pause und neue runde
+export const ROUND = {
+    duration: 5 * 60 * 1000,   // ms: längste dauer einer runde
+    intermission: 8000,        // ms: pause nach einer runde
+    minPlayers: 2,             // so viele spieler braucht es für eine runde
+    hudY: 14,
+    hudFontSize: 22,
+    bannerY: 120,
+    bannerFontSize: 46,
+    hintY: VIEW_HEIGHT - 70,
+    hintFontSize: 22,
+    depth: 250,
 };
 
 export const REPAIR_KIT = {

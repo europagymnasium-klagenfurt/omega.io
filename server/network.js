@@ -1,13 +1,13 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer, healPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, RESPAWN, REPAIR_KIT, HEALTH_BAR } from "../public/src/config.js";
+import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, checkRoundEnd } from "./rounds.js";
+import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
 const repairClaimed = REPAIR_KIT.positions.map(() => false);   // ist das kit gerade eingesammelt?
-const respawnTimers = {};   // spieler-id -> timer bis zum neustart nach dem tod
 
 // daten vom client sind nicht vertrauenswürdig: alles, was kein objekt ist, wird zu {}
 // (sonst kann eine kaputte nachricht den ganzen server abstürzen lassen)
@@ -16,6 +16,8 @@ function asObject(data) {
 }
 
 export function setupNetwork(io) {
+    setupRounds(io);
+
     io.on("connection", (socket) => {
         console.log("a user connected " + socket.id);
 
@@ -23,15 +25,21 @@ export function setupNetwork(io) {
 
         socket.on(EVENTS.READY, (raw) => {
             const data = asObject(raw);
-            if (!getPlayer(id)) addPlayer(id, data.name);
+            const isNew = !getPlayer(id);
+            if (isNew) {
+                addPlayer(id, data.name);
+                if (isRunning()) setSpectator(id);   // mitten in der runde: zusehen bis zur nächsten
+            }
             setPlayerVehicle(id, data.vehicleKey);
             socket.emit(EVENTS.INIT, {
                 id: id,
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
+                round: getRoundInfo(),
                 repairClaimed: repairClaimed,
             });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
+            if (isNew) onPlayerJoined();
         });
 
         socket.on(EVENTS.UPDATE, (raw) => {
@@ -99,7 +107,7 @@ export function setupNetwork(io) {
             const data = asObject(raw);
             const shooter = getPlayer(id);
             const target = getPlayer(data.targetId);
-            if (!shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
+            if (!isRunning() || !shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
 
             // nicht öfter treffen als geschossen werden kann
             const now = Date.now();
@@ -127,24 +135,50 @@ export function setupNetwork(io) {
                     victimDeaths: victim.deaths,
                 });
 
-                // nach kurzer zeit neu starten (wenn der spieler dann noch da ist)
-                respawnTimers[target.id] = setTimeout(() => {
-                    delete respawnTimers[target.id];
-                    const player = respawnPlayer(target.id);
-                    if (!player) return;
-                    io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
-                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
-                }, RESPAWN.delay);
+                // ausgeschieden bis zur nächsten runde: ist nur noch einer übrig, ist die runde vorbei
+                checkRoundEnd();
+            }
+        });
+
+        // aufprall gegen ein hindernis: schaden mit abklingzeit, damit nicht jeder frame zählt
+        let lastObstacleHitTime = 0;
+        socket.on(EVENTS.OBSTACLE_HIT, () => {
+            const player = getPlayer(id);
+            if (!isRunning() || !player || player.health <= 0) return;
+
+            const now = Date.now();
+            if (now - lastObstacleHitTime < OBSTACLE_DAMAGE.cooldown) return;
+
+            lastObstacleHitTime = now;
+            damagePlayer(id, OBSTACLE_DAMAGE.damage);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+
+            // am hindernis zerstört: als tod zählen (ohne gegner), im killfeed steht der name dann zweimal
+            if (player.health <= 0) {
+                player.deaths += 1;
+                io.emit(EVENTS.PLAYER_KILLED, {
+                    killerId: id,
+                    killerName: player.name,
+                    killerColor: player.color,
+                    killerKills: player.kills,
+                    victimId: id,
+                    victimName: player.name,
+                    victimColor: player.color,
+                    victimDeaths: player.deaths,
+                });
+
+                // ausgeschieden bis zur nächsten runde (zuschauen übernimmt irgendeinen lebenden spieler)
+                player.alive = false;
+                checkRoundEnd();
             }
         });
 
         socket.on("disconnect", () => {
             console.log("user disconnected " + id);
-            clearTimeout(respawnTimers[id]);
-            delete respawnTimers[id];
             if (getPlayer(id)) {
                 socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
                 removePlayer(id);
+                checkRoundEnd();
             }
         });
     });

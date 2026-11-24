@@ -1,5 +1,5 @@
 
-import { GARAGES, OBSTACLES, SPEED_BOOST, WORLD_HEIGHT, WORLD_WIDTH } from "../config.js";
+import { GARAGES, OBSTACLES, REPAIR_KIT, SPEED_BOOST, WORLD_HEIGHT, WORLD_WIDTH } from "../config.js";
 
 export class ObstacleField {
     constructor(scene, car) {
@@ -84,6 +84,13 @@ export class ObstacleField {
             OBSTACLES.boostSafeRadius + radius
         ) {
             return false;
+        }
+
+        // um die reparatur-kits bleibt platz
+        for (const kit of REPAIR_KIT.positions) {
+            if (Math.hypot(x - kit.x, y - kit.y) < REPAIR_KIT.safeRadius + radius) {
+                return false;
+            }
         }
 
         // garagen und ihre einfahrt freihalten

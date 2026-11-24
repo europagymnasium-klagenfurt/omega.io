@@ -1,11 +1,12 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, recordDeath, respawnPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, CAR_CRASH, RESPAWN } from "../public/src/config.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, recordDeath, respawnPlayer, healPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, CAR_CRASH, RESPAWN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
+const repairClaimed = REPAIR_KIT.positions.map(() => false);   // ist das kit gerade eingesammelt?
 const respawnTimers = {};   // spieler-id -> timer bis zum neustart nach dem tod
 const lastCrashTimes = {};   // autopaar -> zeitpunkt des letzten schadens (beide clients melden denselben crash)
 
@@ -44,6 +45,7 @@ export function setupNetwork(io) {
                 id: id,
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
+                repairClaimed: repairClaimed,
             });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
         });
@@ -72,6 +74,29 @@ export function setupNetwork(io) {
                 boostRespawnTimer = null;
                 io.emit(EVENTS.BOOST_PICKUP_RESPAWNED);
             }, SPEED_BOOST.respawnDelay);
+        });
+
+        // reparatur-kit: server prüft abstand, lebenspunkte und ob das kit noch da ist
+        socket.on(EVENTS.REPAIR_PICKUP, (data = {}) => {
+            const index = data.index;
+            const spot = REPAIR_KIT.positions[index];
+            const player = getPlayer(id);
+            const valid = spot && !repairClaimed[index] && player
+                && player.health > 0 && player.health < HEALTH_BAR.points
+                && Math.hypot(player.x - spot.x, player.y - spot.y) <= REPAIR_KIT.pickupRadius;
+            if (!valid) {
+                socket.emit(EVENTS.REPAIR_REJECTED, { index: index });
+                return;
+            }
+
+            repairClaimed[index] = true;
+            healPlayer(id, REPAIR_KIT.heal);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+            io.emit(EVENTS.REPAIR_TAKEN, { index: index });
+            setTimeout(() => {
+                repairClaimed[index] = false;
+                io.emit(EVENTS.REPAIR_RESPAWNED, { index: index });
+            }, REPAIR_KIT.respawnDelay);
         });
 
         // schuss an alle anderen weitergeben
@@ -145,6 +170,45 @@ export function setupNetwork(io) {
             }
             sendStats(io, self);
             sendStats(io, other);
+        });
+
+        // aufprall gegen ein hindernis: schaden mit abklingzeit, damit nicht jeder frame zählt
+        let lastObstacleHitTime = 0;
+        socket.on(EVENTS.OBSTACLE_HIT, () => {
+            const player = getPlayer(id);
+            if (!player || player.health <= 0) return;
+
+            const now = Date.now();
+            if (now - lastObstacleHitTime < OBSTACLE_DAMAGE.cooldown) return;
+
+            lastObstacleHitTime = now;
+            damagePlayer(id, OBSTACLE_DAMAGE.damage);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+
+            // am hindernis zerstört: als tod zählen (ohne gegner), im killfeed steht der name dann zweimal
+            if (player.health <= 0) {
+                player.deaths += 1;
+                io.emit(EVENTS.PLAYER_KILLED, {
+                    killerId: id,
+                    killerName: player.name,
+                    killerColor: player.color,
+                    killerKills: player.kills,
+                    victimId: id,
+                    victimName: player.name,
+                    victimColor: player.color,
+                    victimDeaths: player.deaths,
+                });
+
+                // wie beim abschuss: nach kurzer zeit neu starten
+                respawnTimers[id] = setTimeout(() => {
+                    delete respawnTimers[id];
+                    const respawned = respawnPlayer(id);
+                    if (!respawned) return;
+                    io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: respawned.health });
+                    io.emit(EVENTS.PLAYER_RESPAWNED, { id: id, x: respawned.x, y: respawned.y, angle: respawned.angle, health: respawned.health });
+                }, RESPAWN.delay);
+            }
+            sendStats(io, player);
         });
 
         socket.on("disconnect", () => {

@@ -147,6 +147,12 @@ export const ARMOR = {
     "monster-face": 2,
 };
 
+// schaden, wenn das eigene auto gegen ein hindernis fährt (kleiner teil der lebenspunkte)
+export const OBSTACLE_DAMAGE = {
+    damage: 0.2,          // lebenspunkte pro aufprall (bei armor 1)
+    cooldown: 800,        // millisekunden, bis wieder schaden möglich ist (sonst zählt jeder frame)
+};
+
 export const HEALTH_BAR = {
     points: 5,                // maximale lebenspunkte
     width: 70,                // balken bei voller gesundheit
@@ -254,4 +260,34 @@ export const RESPAWN = {
     messageFontSize: 44,
     messageY: VIEW_HEIGHT / 3,
     depth: 300,
+};
+
+export const REPAIR_KIT = {
+    positions: [
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.75 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.75 },
+    ],
+    size: 56,
+    pickupRadius: 70,       // server: so nah muss das auto am kit sein
+    clientFactor: 0.7,      // client fragt erst bei diesem teil des radius an (sicherheitsabstand zur server-position)
+    heal: 2,                // so viele lebenspunkte gibt ein kit zurück
+    respawnDelay: 20000,    // so lange (ms) ist ein eingesammeltes kit weg
+    retryDelay: 300,        // nach einer ablehnung so lange (ms) nicht erneut anfragen
+    safeRadius: 120,        // so weit halten die hindernisse abstand
+    color: 0xffffff,
+    crossColor: 0xe53935,
+    depth: 3,
+};
+
+export const HIT_FEEDBACK = {
+    flashColor: 0xff0000,
+    flashAlpha: 0.28,         // stärke des roten aufblitzens
+    flashDuration: 220,
+    shakeDuration: 120,
+    shakeIntensity: 0.004,
+    deathShakeDuration: 400,  // beim zerstört werden wackelt es länger und stärker
+    deathShakeIntensity: 0.012,
+    depth: 250,
 };

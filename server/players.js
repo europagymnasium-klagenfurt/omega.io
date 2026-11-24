@@ -31,6 +31,8 @@ export function addPlayer(id, requestedName) {
         color: color,
         health: HEALTH_BAR.points,
         armor: ARMOR.default,
+        kills: 0,
+        deaths: 0,
     };
     return players[id];
 }
@@ -44,6 +46,17 @@ export function damagePlayer(id, damage) {
     const health = player.health - damage / player.armor;
     player.health = Math.max(0, Math.round(health * 1000) / 1000);
     return player;
+}
+
+// abschuss verbuchen: der schütze bekommt einen kill, das opfer einen tod
+export function recordKill(killerId, victimId) {
+    const killer = players[killerId];
+    const victim = players[victimId];
+    if (!killer || !victim) return null;
+
+    killer.kills += 1;
+    victim.deaths += 1;
+    return { killer, victim };
 }
 
 export function getPlayer(id) {

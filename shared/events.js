@@ -23,4 +23,5 @@ export const EVENTS = {
     BOOST_GRANTED: "boostGranted",   // speed-boost nur für den sammler
     SHOT_FIRED: "shotFired",         // {id, x, y, vx, vy} schuss eines anderen spielers
     HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
+    PLAYER_KILLED: "playerKilled",   // {killerId, killerName, killerColor, killerKills, victimId, victimName, victimColor, victimDeaths}
 };

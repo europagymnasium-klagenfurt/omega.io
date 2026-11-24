@@ -24,5 +24,6 @@ export const EVENTS = {
     SHOT_FIRED: "shotFired",         // {id, x, y, vx, vy} schuss eines anderen spielers
     HEALTH_CHANGED: "healthChanged", // {id, health} neue lebenspunkte eines spielers
     PLAYER_RESPAWNED: "playerRespawned", // {id, x, y, angle, health} zerstörtes auto ist wieder da
+    STATS_CHANGED: "statsChanged",   // {id, kills, deaths, damageDealt, damageTaken} neue statistik eines spielers
     PLAYER_KILLED: "playerKilled",   // {killerId, killerName, killerColor, killerKills, victimId, victimName, victimColor, victimDeaths}
 };

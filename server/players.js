@@ -33,18 +33,37 @@ export function addPlayer(id, requestedName) {
         armor: ARMOR.default,
         kills: 0,
         deaths: 0,
+        damageDealt: 0,   // schaden, den der spieler anderen zugefügt hat
+        damageTaken: 0,   // schaden, den der spieler bekommen hat
     };
     return players[id];
 }
 
 // lebenspunkte abziehen, die panzerung verringert den schaden (damage / armor).
 // auf 3 kommastellen runden, sonst wird aus 5 - 0.1 - 0.1 ... z.b. 4.199999
-export function damagePlayer(id, damage) {
+// attackerId (optional): dem angreifer wird der tatsächlich verlorene schaden gutgeschrieben.
+export function damagePlayer(id, damage, attackerId = null) {
     const player = players[id];
     if (!player) return null;
 
-    const health = player.health - damage / player.armor;
-    player.health = Math.max(0, Math.round(health * 1000) / 1000);
+    const health = Math.max(0, Math.round((player.health - damage / player.armor) * 1000) / 1000);
+    const lost = Math.round((player.health - health) * 1000) / 1000;   // nie mehr als noch da war
+    player.health = health;
+    player.damageTaken = Math.round((player.damageTaken + lost) * 1000) / 1000;
+
+    const attacker = players[attackerId];
+    if (attacker && attacker !== player) {
+        attacker.damageDealt = Math.round((attacker.damageDealt + lost) * 1000) / 1000;
+    }
+    return player;
+}
+
+// tod ohne schützen (z.b. zusammenstoß): nur das opfer bekommt einen tod
+export function recordDeath(id) {
+    const player = players[id];
+    if (!player) return null;
+
+    player.deaths += 1;
     return player;
 }
 

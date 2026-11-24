@@ -1,4 +1,4 @@
-// rangliste mit kills und toden: solange TAB gedrückt ist, wird sie in der mitte angezeigt.
+// rangliste mit kills, toden und schaden (ausgeteilt/erhalten): solange TAB gedrückt ist, wird sie in der mitte angezeigt.
 // die zahlen zählt der server, hier werden nur die events (INIT, PLAYER_KILLED, ...) übernommen.
 
 import { socket, EVENTS } from "../network.js";
@@ -8,7 +8,7 @@ export class Scoreboard {
     constructor(scene) {
         this.scene = scene;
         this.ownId = null;
-        this.players = {};     // id -> {name, color, kills, deaths}
+        this.players = {};     // id -> {name, color, kills, deaths, damageDealt, damageTaken}
         this.rows = [];
         this.dirty = true;
 
@@ -23,6 +23,7 @@ export class Scoreboard {
             [EVENTS.PLAYER_JOINED]: (player) => this.setPlayer(player),
             [EVENTS.PLAYER_LEFT]: (data) => this.removePlayer(data.id),
             [EVENTS.PLAYER_KILLED]: (data) => this.onKilled(data),
+            [EVENTS.STATS_CHANGED]: (data) => this.onStats(data),
         };
         for (const [event, handler] of Object.entries(this.handlers)) {
             socket.on(event, handler);
@@ -44,6 +45,8 @@ export class Scoreboard {
             color: player.color,
             kills: player.kills ?? 0,
             deaths: player.deaths ?? 0,
+            damageDealt: player.damageDealt ?? 0,
+            damageTaken: player.damageTaken ?? 0,
         };
         this.dirty = true;
     }
@@ -58,6 +61,17 @@ export class Scoreboard {
         const victim = this.players[data.victimId];
         if (killer) killer.kills = data.killerKills;
         if (victim) victim.deaths = data.victimDeaths;
+        this.dirty = true;
+    }
+
+    // komplette statistik eines spielers vom server übernehmen
+    onStats(data) {
+        const player = this.players[data.id];
+        if (!player) return;
+        player.kills = data.kills;
+        player.deaths = data.deaths;
+        player.damageDealt = data.damageDealt;
+        player.damageTaken = data.damageTaken;
         this.dirty = true;
     }
 
@@ -86,16 +100,23 @@ export class Scoreboard {
         const small = `${SCOREBOARD.fontSize - 4}px`;
 
         this.addText(left, top, "SPIELER", "#8ad8ff", small, 0);
-        this.addText(right - 70, top, "KILLS", "#8ad8ff", small, 1);
-        this.addText(right, top, "TODE", "#8ad8ff", small, 1);
+        // zahlenspalten von rechts: erhalten, schaden, tode, kills
+        const col = (n) => right - n * SCOREBOARD.columnWidth;
+        this.addText(col(0), top, "ERHALTEN", "#8ad8ff", small, 1);
+        this.addText(col(1), top, "SCHADEN", "#8ad8ff", small, 1);
+        this.addText(col(2), top, "TODE", "#8ad8ff", small, 1);
+        this.addText(col(3), top, "KILLS", "#8ad8ff", small, 1);
 
         entries.forEach(([id, player], index) => {
             const y = top + SCOREBOARD.titleHeight - SCOREBOARD.padding + index * SCOREBOARD.rowHeight;
             const color = `#${player.color.toString(16).padStart(6, "0")}`;
             const name = id === this.ownId ? `${player.name} (du)` : player.name;
             this.addText(left, y, name, color, `${SCOREBOARD.fontSize}px`, 0);
-            this.addText(right - 70, y, String(player.kills), "#ffffff", `${SCOREBOARD.fontSize}px`, 1);
-            this.addText(right, y, String(player.deaths), "#ffffff", `${SCOREBOARD.fontSize}px`, 1);
+            const size = `${SCOREBOARD.fontSize}px`;
+            this.addText(col(0), y, player.damageTaken.toFixed(1), "#ff8a8a", size, 1);
+            this.addText(col(1), y, player.damageDealt.toFixed(1), "#8aff8a", size, 1);
+            this.addText(col(2), y, String(player.deaths), "#ffffff", size, 1);
+            this.addText(col(3), y, String(player.kills), "#ffffff", size, 1);
         });
     }
 

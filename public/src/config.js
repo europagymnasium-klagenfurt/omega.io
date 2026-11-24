@@ -223,7 +223,8 @@ export const MINIMAP = {
 
 export const SCOREBOARD = {
     key: "TAB",                // gedrückt halten zeigt die rangliste
-    width: 460,
+    width: 640,
+    columnWidth: 85,           // breite einer zahlenspalte (kills, tode, schaden, erhalten)
     padding: 18,
     titleHeight: 44,
     rowHeight: 28,

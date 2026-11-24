@@ -1,7 +1,7 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer } from "./players.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, recordDeath, respawnPlayer } from "./players.js";
 import { SPEED_BOOST, MACHINE_GUN, CAR_CRASH, RESPAWN } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
@@ -18,6 +18,17 @@ function scheduleRespawn(io, id) {
         io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
         io.emit(EVENTS.PLAYER_RESPAWNED, { id: player.id, x: player.x, y: player.y, angle: player.angle, health: player.health });
     }, RESPAWN.delay);
+}
+
+// aktuelle statistik eines spielers an alle schicken
+function sendStats(io, player) {
+    io.emit(EVENTS.STATS_CHANGED, {
+        id: player.id,
+        kills: player.kills,
+        deaths: player.deaths,
+        damageDealt: player.damageDealt,
+        damageTaken: player.damageTaken,
+    });
 }
 
 export function setupNetwork(io) {
@@ -85,7 +96,7 @@ export function setupNetwork(io) {
             if (distance > MACHINE_GUN.range + MACHINE_GUN.hitTolerance) return;
 
             lastHitTime = now;
-            damagePlayer(target.id, MACHINE_GUN.damage);
+            damagePlayer(target.id, MACHINE_GUN.damage, shooter.id);
             io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
 
             // keine lebenspunkte mehr: abschuss verbuchen und allen melden
@@ -104,6 +115,8 @@ export function setupNetwork(io) {
 
                 scheduleRespawn(io, target.id);
             }
+            sendStats(io, target);
+            sendStats(io, shooter);
         });
 
         // zusammenstoß: beide autos bekommen schaden, pro autopaar nur einmal pro cooldown
@@ -120,12 +133,18 @@ export function setupNetwork(io) {
             if (now - (lastCrashTimes[pair] ?? 0) < CAR_CRASH.cooldown) return;
             lastCrashTimes[pair] = now;
 
-            for (const player of [self, other]) {
-                damagePlayer(player.id, CAR_CRASH.damage);
+            // jeder gilt für den anderen als verursacher des schadens
+            for (const [player, causer] of [[self, other], [other, self]]) {
+                damagePlayer(player.id, CAR_CRASH.damage, causer.id);
                 io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
-                // tot durch den zusammenstoß: es gibt keinen schützen, also kein kill, aber neustart
-                if (player.health <= 0) scheduleRespawn(io, player.id);
+                // tot durch den zusammenstoß: es gibt keinen schützen, also kein kill, aber einen tod und neustart
+                if (player.health <= 0) {
+                    recordDeath(player.id);
+                    scheduleRespawn(io, player.id);
+                }
             }
+            sendStats(io, self);
+            sendStats(io, other);
         });
 
         socket.on("disconnect", () => {

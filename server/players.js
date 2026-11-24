@@ -74,6 +74,16 @@ export function respawnPlayer(id) {
     return player;
 }
 
+// lebenspunkte zurückgeben (höchstens bis zum maximum), gerundet wie beim schaden
+export function healPlayer(id, amount) {
+    const player = players[id];
+    if (!player) return null;
+
+    const health = Math.min(HEALTH_BAR.points, player.health + amount);
+    player.health = Math.round(health * 1000) / 1000;
+    return player;
+}
+
 export function getPlayer(id) {
     return players[id];
 }

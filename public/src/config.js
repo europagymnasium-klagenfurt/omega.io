@@ -223,3 +223,22 @@ export const RESPAWN = {
     messageY: VIEW_HEIGHT / 3,
     depth: 300,
 };
+
+export const REPAIR_KIT = {
+    positions: [
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.75 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.75 },
+    ],
+    size: 56,
+    pickupRadius: 70,       // server: so nah muss das auto am kit sein
+    clientFactor: 0.7,      // client fragt erst bei diesem teil des radius an (sicherheitsabstand zur server-position)
+    heal: 2,                // so viele lebenspunkte gibt ein kit zurück
+    respawnDelay: 20000,    // so lange (ms) ist ein eingesammeltes kit weg
+    retryDelay: 300,        // nach einer ablehnung so lange (ms) nicht erneut anfragen
+    safeRadius: 120,        // so weit halten die hindernisse abstand
+    color: 0xffffff,
+    crossColor: 0xe53935,
+    depth: 3,
+};

@@ -17,6 +17,7 @@ import { ObstacleField } from "../systems/ObstacleField.js";
 import { Minimap } from "../systems/Minimap.js";
 import { Scoreboard } from "../systems/Scoreboard.js";
 import { KillFeed } from "../systems/KillFeed.js";
+import { Respawn } from "../systems/Respawn.js";
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -154,6 +155,7 @@ export class GameScene extends Phaser.Scene {
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
         this.scoreboard = new Scoreboard(this);
         this.killFeed = new KillFeed(this);
+        this.respawn = new Respawn(this, this.car, this.multiplayer);
     }
 
     update(time, delta) {
@@ -171,6 +173,7 @@ export class GameScene extends Phaser.Scene {
         this.multiplayer.sendState();
         this.minimap.update(time);
         this.scoreboard.update();
+        this.respawn.update();
     }
 
     getMovementInput() {

@@ -202,3 +202,17 @@ export const SCOREBOARD = {
     backgroundAlpha: 0.92,
     borderColor: 0x4ec9f5,
 };
+
+export const KILLFEED = {
+    x: 16,
+    y: 44,                 // unter der ping-anzeige
+    maxLines: 5,
+    lineHeight: 26,
+    showTime: 5000,        // so lange bleibt eine zeile stehen (ms)
+    fadeTime: 600,
+    fontSize: 16,
+    depth: 150,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.75,
+    padding: 6,
+};

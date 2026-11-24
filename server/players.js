@@ -1,7 +1,7 @@
 // verwaltet alle spieler am server (nur daten, kein socket-code)
 
 import { DEFAULT_VEHICLE_KEY, getVehicle } from "../shared/vehicles.js";
-import { HEALTH_BAR, ARMOR, PLAYER_NAME } from "../public/src/config.js";
+import { HEALTH_BAR, ARMOR, PLAYER_NAME, OBSTACLES } from "../public/src/config.js";
 
 const COLORS = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
 
@@ -31,7 +31,11 @@ export function addPlayer(id, requestedName) {
         color: color,
         health: HEALTH_BAR.points,
         armor: ARMOR.default,
-        killStreak: 0,
+        kills: 0,
+        deaths: 0,
+        roundKills: 0,   // abschüsse in der aktuellen runde (entscheidet den sieger)
+        alive: true,   // false = ausgeschieden, bis zum neustart
+        killStreak: 0,   // kills in folge, siehe killstreak.js
     };
     return players[id];
 }
@@ -47,13 +51,52 @@ export function damagePlayer(id, damage) {
     return player;
 }
 
-// killstreak erhöhen und neuen wert zurückgeben. das opfer verliert seine streak.
-export function addKill(killerId, victimId) {
-    if (players[victimId]) players[victimId].killStreak = 0;
+// abschuss verbuchen: der schütze bekommt einen kill, das opfer einen tod
+export function recordKill(killerId, victimId) {
     const killer = players[killerId];
-    if (!killer) return 0;
-    killer.killStreak += 1;
-    return killer.killStreak;
+    const victim = players[victimId];
+    if (!killer || !victim) return null;
+
+    killer.kills += 1;
+    killer.roundKills += 1;
+    victim.deaths += 1;
+    victim.alive = false;
+    return { killer, victim };
+}
+
+// zerstörtes auto neu starten: volle lebenspunkte, zufälliger startplatz aus der freien startreihe
+// (dort stehen garantiert keine hindernisse, siehe OBSTACLES.spawn)
+export function respawnPlayer(id, slot = Math.floor(Math.random() * OBSTACLES.spawn.count)) {
+    const player = players[id];
+    if (!player) return null;
+
+    const spawn = OBSTACLES.spawn;
+    player.x = spawn.x + (slot % spawn.count) * spawn.spacing;
+    player.y = spawn.y;
+    player.angle = 0;
+    player.health = HEALTH_BAR.points;
+    player.alive = true;
+    return player;
+}
+
+// spieler, der mitten in einer runde dazukommt: sieht zu, bis er neu startet
+export function setSpectator(id) {
+    const player = players[id];
+    if (!player) return null;
+
+    player.alive = false;
+    player.health = 0;
+    return player;
+}
+
+// lebenspunkte zurückgeben (höchstens bis zum maximum), gerundet wie beim schaden
+export function healPlayer(id, amount) {
+    const player = players[id];
+    if (!player) return null;
+
+    const health = Math.min(HEALTH_BAR.points, player.health + amount);
+    player.health = Math.round(health * 1000) / 1000;
+    return player;
 }
 
 export function getPlayer(id) {

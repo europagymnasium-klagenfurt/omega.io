@@ -2,8 +2,9 @@
 
 export const VIEW_WIDTH = 1200;
 export const VIEW_HEIGHT = 800;
-export const WORLD_WIDTH = VIEW_WIDTH * 2;
-export const WORLD_HEIGHT = VIEW_HEIGHT * 2;
+export const WORLD_SIZE_FACTOR = 3;   // wie viele bildschirme breit/hoch die welt ist
+export const WORLD_WIDTH = VIEW_WIDTH * WORLD_SIZE_FACTOR;
+export const WORLD_HEIGHT = VIEW_HEIGHT * WORLD_SIZE_FACTOR;
 
 export const DEBUG = false;  // zeigt die hitboxen an
 
@@ -71,7 +72,9 @@ export const SPEED_BOOST = {
 
 export const OBSTACLES = {
     seed: 482731,
-    count: 20,
+    count: 40,              // so viele hindernisse (höchstens gridColumns * gridRows)
+    gridColumns: 8,         // die welt wird in felder geteilt, pro feld höchstens ein hindernis
+    gridRows: 6,
     attemptsPerObstacle: 80,
     edgeMargin: 140,
     spacing: 80,
@@ -83,6 +86,30 @@ export const OBSTACLES = {
         { key: "obstacle-wreck", asset: "brokencar.png", width: 132, height: 132, bodyWidth: 66, bodyHeight: 124, weight: 3 },
         { key: "obstacle-wall", asset: "wall.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
         { key: "obstacle-wall-top", asset: "wall from above.png", width: 260, height: 108, bodyWidth: 250, bodyHeight: 60, weight: 2 },
+    ],
+};
+
+// garagen in der welt: einfahren = fahrzeug wechseln (leben bleiben gleich)
+export const GARAGES = {
+    width: 240,
+    height: 170,
+    enterRatio: 0.55,        // so weit muss das auto drin sein (anteil der garagengröße)
+    maxStay: 10000,          // ms: so lange darf man höchstens in der garage bleiben
+    cooldown: 60000,         // ms: so lange sind die garagen danach gesperrt
+    enterDelay: 250,         // ms überblendung, bevor das menü kommt
+    safeMargin: 120,         // abstand zu hindernissen
+    labelFontSize: 26,
+    labelColor: "#ffd27a",   // neon-schrift
+    labelGlow: 0xff9a2e,
+    labelGap: 26,            // abstand des schilds über dem dach
+    doorWidth: 170,
+    doorHeight: 18,
+    list: [
+        { name: "GARAGE NORD", x: 1900, y: 330 },
+        { name: "GARAGE NORDOST", x: 3250, y: 420 },
+        { name: "GARAGE WEST", x: 340, y: 1200 },
+        { name: "GARAGE SÜDWEST", x: 1000, y: 2050 },
+        { name: "GARAGE SÜDOST", x: 2800, y: 2000 },
     ],
 };
 
@@ -111,6 +138,12 @@ export const ARMOR = {
     "monster-croc": 2,
     "monster-shark": 2,
     "monster-face": 2,
+};
+
+// schaden, wenn das eigene auto gegen ein hindernis fährt (kleiner teil der lebenspunkte)
+export const OBSTACLE_DAMAGE = {
+    damage: 0.2,          // lebenspunkte pro aufprall (bei armor 1)
+    cooldown: 800,        // millisekunden, bis wieder schaden möglich ist (sonst zählt jeder frame)
 };
 
 export const HEALTH_BAR = {
@@ -187,23 +220,83 @@ export const MINIMAP = {
     titleFontSize: 10,
 };
 
-export const KILLFEED = {
-    x: 16,                      // abstand zum linken bildrand
-    y: 16,                      // abstand zum oberen bildrand
-    maxEntries: 5,              // so viele meldungen gleichzeitig
-    entryDuration: 5000,        // millisekunden, bis eine meldung ausgeblendet wird
-    fadeDuration: 500,
+export const SCOREBOARD = {
+    key: "TAB",                // gedrückt halten zeigt die rangliste
+    width: 460,
+    padding: 18,
+    titleHeight: 44,
     rowHeight: 28,
-    padding: 8,
-    fontSize: 14,
-    depth: 100,
+    fontSize: 18,
+    depth: 200,
     backgroundColor: 0x101820,
-    backgroundAlpha: 0.85,
-    borderColor: 0xff5555,
-    killerColor: "#ffd166",
-    victimColor: "#ff7a7a",
-    iconColor: "#ffffff",
-    icon: "💥",                 // zeichen zwischen killer und opfer
+    backgroundAlpha: 0.92,
+    borderColor: 0x4ec9f5,
+};
+
+export const KILLFEED = {
+    x: 16,
+    y: 44,                 // unter der ping-anzeige
+    maxLines: 5,
+    lineHeight: 26,
+    showTime: 5000,        // so lange bleibt eine zeile stehen (ms)
+    fadeTime: 600,
+    fontSize: 16,
+    depth: 150,
+    backgroundColor: 0x101820,
+    backgroundAlpha: 0.75,
+    padding: 6,
+};
+
+export const RESPAWN = {
+    delay: 3000,            // so lange (ms) bleibt ein zerstörtes auto weg, bis es neu startet
+    messageFontSize: 44,
+    messageY: VIEW_HEIGHT / 3,
+    depth: 300,
+};
+
+// runden: läuft bis nur noch einer lebt oder die zeit abläuft, danach pause und neue runde
+export const ROUND = {
+    duration: 5 * 60 * 1000,   // ms: längste dauer einer runde
+    intermission: 8000,        // ms: pause nach einer runde
+    minPlayers: 2,             // so viele spieler braucht es für eine runde
+    respawnDelay: 30000,       // ms: so lange sieht ein ausgeschiedener spieler zu, dann startet er wieder
+    hudY: 14,
+    hudFontSize: 22,
+    bannerY: 120,
+    bannerFontSize: 46,
+    hintY: VIEW_HEIGHT - 70,
+    hintFontSize: 22,
+    depth: 250,
+};
+
+export const REPAIR_KIT = {
+    positions: [
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.4 },
+        { x: WORLD_WIDTH * 0.25, y: WORLD_HEIGHT * 0.75 },
+        { x: WORLD_WIDTH * 0.75, y: WORLD_HEIGHT * 0.75 },
+    ],
+    size: 56,
+    pickupRadius: 70,       // server: so nah muss das auto am kit sein
+    clientFactor: 0.7,      // client fragt erst bei diesem teil des radius an (sicherheitsabstand zur server-position)
+    heal: 2,                // so viele lebenspunkte gibt ein kit zurück
+    respawnDelay: 20000,    // so lange (ms) ist ein eingesammeltes kit weg
+    retryDelay: 300,        // nach einer ablehnung so lange (ms) nicht erneut anfragen
+    safeRadius: 120,        // so weit halten die hindernisse abstand
+    color: 0xffffff,
+    crossColor: 0xe53935,
+    depth: 3,
+};
+
+export const HIT_FEEDBACK = {
+    flashColor: 0xff0000,
+    flashAlpha: 0.28,         // stärke des roten aufblitzens
+    flashDuration: 220,
+    shakeDuration: 120,
+    shakeIntensity: 0.004,
+    deathShakeDuration: 400,  // beim zerstört werden wackelt es länger und stärker
+    deathShakeIntensity: 0.012,
+    depth: 250,
 };
 
 export const KILLSTREAK = {

@@ -4,7 +4,7 @@
 
 import { WORLD_WIDTH, WORLD_HEIGHT, SPAWN_INTRO, CONTROLS } from "../config.js";
 import { PlayerCar } from "../objects/PlayerCar.js";
-import { GarageAccess } from "../systems/GarageAccess.js";
+import { GarageField } from "../systems/GarageField.js";
 import { CarCollisions } from "../systems/CarCollisions.js";
 import { CollisionMessage } from "../systems/CollisionMessage.js";
 import { Multiplayer } from "../systems/Multiplayer.js";
@@ -43,7 +43,15 @@ export class GameScene extends Phaser.Scene {
         this.arrowKeys = this.input.keyboard.createCursorKeys();
         this.cursors = this.input.keyboard.addKeys(CONTROLS);
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-        this.setupIntroAnimation();
+        // aus der garage kommend gibt es kein intro, es geht direkt weiter
+        if (data?.fromGarage) {
+            this.isIntroActive = false;
+            this.car.setVisible(true).setAlpha(1);
+            this.cameras.main.setZoom(1);
+            this.setupGameplay();
+        } else {
+            this.setupIntroAnimation();
+        }
     }
 
     setupIntroAnimation() {
@@ -147,9 +155,9 @@ export class GameScene extends Phaser.Scene {
         this.collisionMessage = new CollisionMessage(this);
         this.carCollisions = new CarCollisions(this, this.car, this.collisionMessage);
         this.playerHud = new PlayerHud(this);
-        if (!this.vehicleChangeUsed) this.garageAccess = new GarageAccess(this, this.car, this.playerHud);
         this.multiplayer = new Multiplayer(this, this.car, this.carCollisions, this.playerHud, this.playerName);
         this.playerHealth = new PlayerHealth(this, this.car, this.multiplayer);
+        this.garageField = new GarageField(this, this.car, this.playerHealth, this.multiplayer, this.playerName);
         this.machineGun = new MachineGun(this, this.car, this.multiplayer, this.playerHealth);
         this.exhaustSmoke = new ExhaustSmoke(this, this.car);
         this.minimap = new Minimap(this, this.car, this.multiplayer, this.playerHud, this.obstacleField, this.speedBoost);
@@ -168,6 +176,7 @@ export class GameScene extends Phaser.Scene {
         const isAlive = this.playerHealth.isAlive();
         if (isAlive) this.car.drive(movementInput, this.shiftKey);
         this.exhaustSmoke.update(isAlive && movementInput.up.isDown);
+        this.garageField.update();
         this.machineGun.update(time);
         this.playerHud.update(this.car.getSpeedKmh(), delta);
         this.multiplayer.sendState();

@@ -1,11 +1,12 @@
 // alle socket.io events am server
 
 import { EVENTS } from "../shared/events.js";
-import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN, RESPAWN, OBSTACLE_DAMAGE } from "../public/src/config.js";
+import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, respawnPlayer, healPlayer } from "./players.js";
+import { SPEED_BOOST, MACHINE_GUN, RESPAWN, REPAIR_KIT, HEALTH_BAR, OBSTACLE_DAMAGE } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
+const repairClaimed = REPAIR_KIT.positions.map(() => false);   // ist das kit gerade eingesammelt?
 const respawnTimers = {};   // spieler-id -> timer bis zum neustart nach dem tod
 
 export function setupNetwork(io) {
@@ -21,6 +22,7 @@ export function setupNetwork(io) {
                 id: id,
                 players: getAllPlayers(),
                 boostAvailable: !boostPickupClaimed,
+                repairClaimed: repairClaimed,
             });
             socket.broadcast.emit(EVENTS.PLAYER_JOINED, getPlayer(id));
         });
@@ -49,6 +51,29 @@ export function setupNetwork(io) {
                 boostRespawnTimer = null;
                 io.emit(EVENTS.BOOST_PICKUP_RESPAWNED);
             }, SPEED_BOOST.respawnDelay);
+        });
+
+        // reparatur-kit: server prüft abstand, lebenspunkte und ob das kit noch da ist
+        socket.on(EVENTS.REPAIR_PICKUP, (data = {}) => {
+            const index = data.index;
+            const spot = REPAIR_KIT.positions[index];
+            const player = getPlayer(id);
+            const valid = spot && !repairClaimed[index] && player
+                && player.health > 0 && player.health < HEALTH_BAR.points
+                && Math.hypot(player.x - spot.x, player.y - spot.y) <= REPAIR_KIT.pickupRadius;
+            if (!valid) {
+                socket.emit(EVENTS.REPAIR_REJECTED, { index: index });
+                return;
+            }
+
+            repairClaimed[index] = true;
+            healPlayer(id, REPAIR_KIT.heal);
+            io.emit(EVENTS.HEALTH_CHANGED, { id: id, health: player.health });
+            io.emit(EVENTS.REPAIR_TAKEN, { index: index });
+            setTimeout(() => {
+                repairClaimed[index] = false;
+                io.emit(EVENTS.REPAIR_RESPAWNED, { index: index });
+            }, REPAIR_KIT.respawnDelay);
         });
 
         // schuss an alle anderen weitergeben

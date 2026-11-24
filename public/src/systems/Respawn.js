@@ -2,7 +2,7 @@
 // die lebenspunkte (und damit "wieder am leben") kommen über HEALTH_CHANGED, siehe PlayerHealth.
 
 import { socket, EVENTS } from "../network.js";
-import { RESPAWN, VIEW_WIDTH } from "../config.js";
+import { RESPAWN, VIEW_WIDTH, SPAWN_SHIELD } from "../config.js";
 
 export class Respawn {
     constructor(scene, car, multiplayer) {
@@ -41,8 +41,10 @@ export class Respawn {
             this.car.setAngle(data.angle);
             this.respawnAt = null;
             this.message.setVisible(false);
+            this.car.activateSpawnShield(SPAWN_SHIELD.duration);
         } else {
             this.multiplayer.remoteCars[data.id]?.applyState(data);
+            this.multiplayer.remoteCars[data.id]?.activateSpawnShield(SPAWN_SHIELD.duration);
         }
     }
 

@@ -2,7 +2,7 @@
 
 import { EVENTS } from "../shared/events.js";
 import { setupRounds, isRunning, getRoundInfo, onPlayerJoined, playerDied, playerLeft, scheduleRespawn } from "./rounds.js";
-import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer } from "./players.js";
+import { addPlayer, setSpectator, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer, recordKill, healPlayer, isSpawnProtected } from "./players.js";
 import { tryPlaceMine, removeMine, findTriggeredMine, getAllMines, getCooldownLeft, forgetPlayer } from "./mines.js";
 import { SPEED_BOOST, MACHINE_GUN, MINE, REPAIR_KIT, OBSTACLE_DAMAGE, getVehicleStats } from "../public/src/config.js";
 
@@ -134,6 +134,7 @@ export function setupNetwork(io) {
             const shooter = getPlayer(id);
             const target = getPlayer(data.targetId);
             if (!isRunning() || !shooter || !target || target.id === id || target.health <= 0 || shooter.health <= 0) return;
+            if (isSpawnProtected(target.id)) return;   // spawnschutz: treffer macht keinen schaden
 
             // nicht öfter treffen als geschossen werden kann (je nach fahrzeug unterschiedlich schnell)
             const stats = getVehicleStats(shooter.vehicleKey);

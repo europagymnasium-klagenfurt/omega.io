@@ -3,6 +3,7 @@
 import { CAR, SPEED_BOOST, getVehicleStats } from "../config.js";
 import { DEFAULT_VEHICLE_KEY } from "/shared/vehicles.js";
 import { HealthBar } from "./HealthBar.js";
+import { SpawnShield } from "./SpawnShield.js";
 
 export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, vehicleKey = DEFAULT_VEHICLE_KEY) {
@@ -19,16 +20,25 @@ export class PlayerCar extends Phaser.Physics.Arcade.Sprite {
         this.setCircle(radius, offsetX, offsetY);
         this.speedMultiplier = 1;
         this.healthBar = new HealthBar(scene, this);
+        this.spawnShield = null;
     }
 
     preUpdate(time, delta) {
         super.preUpdate(time, delta);
         this.healthBar.updatePosition();
+        this.spawnShield?.updatePosition();
     }
 
     destroy(fromScene) {
         this.healthBar.destroy();
+        this.spawnShield?.destroy();
         super.destroy(fromScene);
+    }
+
+    // spawnschutz-blase für die angegebene zeit anzeigen (vom server ebenfalls durchgesetzt)
+    activateSpawnShield(durationMs) {
+        this.spawnShield?.destroy();
+        this.spawnShield = new SpawnShield(this.scene, this, durationMs);
     }
 
     // wird jeden frame von der scene aufgerufen.

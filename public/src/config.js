@@ -49,6 +49,19 @@ export const SPAWN_INTRO = {
     driftSpeed: 120,
 };
 
+export const SPAWN_SHIELD = {
+    duration: 3000,         // millisekunden schutz nach dem spawnen (auch server-seitig geprüft, siehe server/players.js)
+    color: 0x66ccff,        // hellblau
+    fillAlpha: 0.22,
+    borderColor: 0xbfe9ff,
+    borderAlpha: 0.9,
+    borderWidth: 3,
+    radiusPadding: 14,      // blase etwas größer als das auto
+    pulseScale: 0.08,       // leichtes pulsieren
+    pulseDuration: 600,
+    fadeDuration: 400,      // am ende ausblenden
+};
+
 export const EXHAUST_SMOKE = {
     frequency: 90,
     quantity: 2,

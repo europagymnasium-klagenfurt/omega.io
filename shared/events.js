@@ -10,6 +10,7 @@ export const EVENTS = {
     BOOST_PICKUP: "boostPickup",      // client möchte das speed-item einsammeln
     SHOOT: "shoot",                  // eigener schuss {x, y, vx, vy}
     HIT: "hit",                      // eigener schuss hat ein anderes auto getroffen {targetId}
+    CAR_CRASH: "carCrash",           // eigenes auto ist mit einem anderen zusammengestoßen {targetId}
 
     // server -> client
     INIT: "init",                    // {id, players} an den neuen spieler

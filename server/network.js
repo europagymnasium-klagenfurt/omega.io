@@ -2,10 +2,11 @@
 
 import { EVENTS } from "../shared/events.js";
 import { addPlayer, getAllPlayers, getPlayer, setPlayerVehicle, updatePlayer, removePlayer, damagePlayer } from "./players.js";
-import { SPEED_BOOST, MACHINE_GUN } from "../public/src/config.js";
+import { SPEED_BOOST, MACHINE_GUN, CAR_CRASH } from "../public/src/config.js";
 
 let boostPickupClaimed = false;
 let boostRespawnTimer = null;
+const lastCrashTimes = {};   // autopaar -> zeitpunkt des letzten schadens (beide clients melden denselben crash)
 
 export function setupNetwork(io) {
     io.on("connection", (socket) => {
@@ -76,11 +77,34 @@ export function setupNetwork(io) {
             io.emit(EVENTS.HEALTH_CHANGED, { id: target.id, health: target.health });
         });
 
+        // zusammenstoß: beide autos bekommen schaden, pro autopaar nur einmal pro cooldown
+        socket.on(EVENTS.CAR_CRASH, (data = {}) => {
+            const self = getPlayer(id);
+            const other = getPlayer(data.targetId);
+            if (!self || !other || other.id === id || self.health <= 0 || other.health <= 0) return;
+
+            const distance = Math.hypot(self.x - other.x, self.y - other.y);
+            if (distance > CAR_CRASH.maxDistance) return;
+
+            const pair = [id, other.id].sort().join("|");
+            const now = Date.now();
+            if (now - (lastCrashTimes[pair] ?? 0) < CAR_CRASH.cooldown) return;
+            lastCrashTimes[pair] = now;
+
+            for (const player of [self, other]) {
+                damagePlayer(player.id, CAR_CRASH.damage);
+                io.emit(EVENTS.HEALTH_CHANGED, { id: player.id, health: player.health });
+            }
+        });
+
         socket.on("disconnect", () => {
             console.log("user disconnected " + id);
             if (getPlayer(id)) {
                 socket.broadcast.emit(EVENTS.PLAYER_LEFT, { id: id });
                 removePlayer(id);
+                for (const pair of Object.keys(lastCrashTimes)) {
+                    if (pair.split("|").includes(id)) delete lastCrashTimes[pair];
+                }
             }
         });
     });

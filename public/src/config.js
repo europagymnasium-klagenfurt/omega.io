@@ -104,6 +104,13 @@ export const MACHINE_GUN = {
     hitTolerance: 150,    // server: treffer gilt nur, wenn ziel höchstens range + das entfernt ist
 };
 
+// schaden bei zusammenstößen zwischen autos (wird wie beim maschinengewehr durch armor geteilt)
+export const CAR_CRASH = {
+    damage: 0.5,          // so viele lebenspunkte kostet ein zusammenstoß (bei armor 1), für BEIDE autos
+    cooldown: 700,        // millisekunden, bis dasselbe autopaar wieder schaden bekommen kann
+    maxDistance: 250,     // server: zusammenstoß gilt nur, wenn die autos höchstens so weit auseinander sind
+};
+
 // panzerung pro fahrzeug: abgezogen wird damage / armor.
 // armor 2 = halber schaden = hält doppelt so viel aus. fahrzeuge ohne eintrag haben "default".
 export const ARMOR = {
